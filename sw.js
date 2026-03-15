@@ -1,8 +1,9 @@
-const CACHE_NAME = 'bosquecr-v2';
+const CACHE_NAME = 'bosquecr-v3';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './preview_smartphone.html',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
