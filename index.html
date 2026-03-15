@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#14321f">
+<title>BosqueCR — Determinación de Bosque Art. 3 Ley 7575</title>
+<link rel="manifest" href="manifest.json">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap');
+:root{
+--bg:#f0ede6;--bg2:#e4e0d7;--card:#fff;
+--primary:#14321f;--primary-light:#1f5432;
+--accent:#d4a017;--accent-light:#f5d56e;--accent-bg:rgba(212,160,23,.12);
+--text:#111;--text-muted:#555;--text-light:#888;
+--border:#c8c4ba;--danger:#c0392b;--success:#1a7a3a;--info:#2a6cb3;
+--radius:14px;--shadow:0 2px 10px rgba(0,0,0,.06);
+--bottom-h:68px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px;-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:contain;padding-bottom:calc(var(--bottom-h) + 12px)}
+/* TOP BAR */
+.top-bar{background:var(--primary);color:#fff;padding:10px 16px 6px;position:sticky;top:0;z-index:90;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.top-bar-row{display:flex;align-items:center;justify-content:space-between}
+.top-bar h1{font-family:'Playfair Display',serif;font-size:16px;font-weight:800}
+.step-badge{background:var(--accent);color:var(--primary);font-size:11px;font-weight:800;padding:3px 10px;border-radius:12px}
+.step-title{font-size:11px;opacity:.7;margin-top:2px}
+.step-dots{display:flex;gap:4px;margin-top:6px;justify-content:center}
+.step-dot{width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:background .3s;cursor:pointer;min-width:10px}
+.step-dot.done{background:var(--accent)}
+.step-dot.active{background:#fff}
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--primary);display:flex;align-items:stretch;justify-content:space-around;height:var(--bottom-h);box-shadow:0 -3px 20px rgba(0,0,0,.3);padding-bottom:env(safe-area-inset-bottom,0px)}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:rgba(255,255,255,.4);transition:all .15s;user-select:none;padding:4px 0;min-height:48px;position:relative}
+.bottom-nav-item:active{opacity:.7;transform:scale(.95)}
+.bottom-nav-item.active{color:var(--accent-light)}
+.bottom-nav-item.active::before{content:'';position:absolute;top:0;left:20%;right:20%;height:3px;background:var(--accent);border-radius:0 0 3px 3px}
+.bottom-nav-item .nav-icon{font-size:20px;line-height:1}
+.bottom-nav-item .nav-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;line-height:1}
+/* SECTIONS */
+.section{display:none;padding:14px 12px 20px;max-width:720px;margin:0 auto}
+.section.active{display:block}
+.section-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--primary);margin-bottom:2px}
+.section-desc{font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5}
+/* NAV ARROWS */
+.section-nav{display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:2px solid var(--bg2)}
+.section-nav .nav-arrow{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:16px;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;border:none;min-height:56px;user-select:none;transition:all .15s}
+.section-nav .nav-arrow:active{transform:scale(.97);opacity:.85}
+.nav-arrow.prev{background:var(--bg2);color:var(--primary)}
+.nav-arrow.next{background:var(--accent);color:var(--primary)}
+/* CARDS */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title .icon{font-size:16px}
+/* FORMS */
+.form-group{margin-bottom:12px}
+.form-group:last-child{margin-bottom:0}
+.form-group label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;background:#fff;color:var(--text);min-height:48px;-webkit-appearance:none;appearance:none;transition:border-color .2s}
+.form-group select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath fill='%23555' d='M7 10L1 4h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:14px 20px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:none;min-height:50px;user-select:none;transition:all .15s}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-accent{background:var(--accent);color:var(--primary)}
+.btn-outline{background:transparent;color:var(--primary);border:2px solid var(--primary)}
+.btn-outline:active{background:var(--primary);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:10px 14px;font-size:12px;min-height:42px}
+.btn-block{width:100%}
+.btn-icon{padding:10px;border-radius:50%;min-height:40px;min-width:40px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+/* TOGGLES */
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap}
+.toggle-btn{padding:10px 16px;border-radius:24px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:#fff;color:var(--text-muted);min-height:42px;user-select:none;transition:all .15s}
+.toggle-btn:active{transform:scale(.96)}
+.toggle-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.toggle-btn.yes.active{background:var(--success);border-color:var(--success);color:#fff}
+.toggle-btn.no.active{background:var(--danger);border-color:var(--danger);color:#fff}
+/* CHECKLISTS */
+.checklist-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bg2)}
+.checklist-item:last-child{border-bottom:none}
+.checklist-label{flex:1;line-height:1.4;font-size:12px;font-weight:500}
+/* PHOTOS */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-top:8px}
+.photo-thumb{aspect-ratio:1;border-radius:10px;overflow:hidden;position:relative;background:var(--bg2);border:1px solid var(--border)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb .remove-photo{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none}
+/* TABLES */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0}
+.tree-table{width:100%;border-collapse:collapse;font-size:12px;min-width:420px}
+.tree-table th{background:var(--primary);color:#fff;padding:10px 6px;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase;white-space:nowrap}
+.tree-table td{padding:4px;border-bottom:1px solid var(--bg2)}
+.tree-table input,.tree-table select{width:100%;padding:10px 6px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:#fff;min-height:40px}
+/* PARCELA TABS */
+.parcela-tab-bar{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.parcela-tab-bar::-webkit-scrollbar{display:none}
+.parcela-tab{padding:10px 20px;border-radius:24px;font-size:13px;font-weight:700;cursor:pointer;background:var(--bg2);color:var(--text-muted);border:2px solid transparent;white-space:nowrap;min-height:42px;transition:all .15s}
+.parcela-tab.active{background:var(--accent);color:var(--primary);border-color:var(--accent)}
+/* GPS */
+.gps-display{display:flex;align-items:center;gap:8px;padding:12px;background:#fff;border-radius:10px;font-size:13px;font-family:'DM Sans',monospace;border:2px solid var(--border);margin-bottom:8px;word-break:break-all}
+.gps-dot{width:12px;height:12px;border-radius:50%;background:var(--border);flex-shrink:0}
+.gps-dot.active{background:var(--success);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* DIAGNOSIS */
+.diagnosis-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--bg2);font-size:12px}
+.diagnosis-row:last-child{border-bottom:none}
+/* EXPORT */
+.export-card{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border-radius:var(--radius);padding:24px 16px;text-align:center;margin-bottom:12px}
+.export-card h3{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px}
+.export-card p{font-size:12px;opacity:.8;margin-bottom:14px;line-height:1.5}
+/* MISC */
+.info-box{background:#e8f0fe;border-left:4px solid var(--info);padding:10px 12px;border-radius:0 10px 10px 0;font-size:11px;line-height:1.5;color:#1a3a5e;margin-bottom:12px}
+.progress-bar{width:100%;height:3px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:6px}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease}
+.participant-card{background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
+.participant-card .participant-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.participant-card .participant-title{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase}
+@media(max-width:480px){html{font-size:14px}.form-row,.form-row-3{grid-template-columns:1fr;gap:8px}.section{padding:10px 10px 16px}.card{padding:14px}.section-title{font-size:18px}.diagnosis-row{flex-direction:column;align-items:flex-start;gap:6px}.diagnosis-row .toggle-group{align-self:flex-end}}
+@media(min-width:481px) and (max-width:768px){.form-row-3{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+<div class="top-bar-row"><h1>🌿 BosqueCR</h1><span class="step-badge" id="stepBadge">1 / 7</span></div>
+<div class="step-title" id="stepTitle">Datos Generales</div>
+<div class="step-dots" id="stepDots"></div>
+</div>
+
+<!-- ===================== SECTION 0: GENERAL ===================== -->
+<div class="section active" id="sec-0">
+<h2 class="section-title">Datos Generales</h2>
+<p class="section-desc">Información administrativa, personal de campo y representación del solicitante.</p>
+<div class="card"><div class="card-title"><span class="icon">📋</span> Datos Administrativos</div>
+<div class="form-group"><label>Objetivo del muestreo</label><textarea id="objetivo">Determinación de terrenos forestales y verificación de cobertura forestal en atención a solicitud de criterio técnico SETENA-DT-DEA-0782-2024 y SETENA-DT-DEA-0514-2025, expediente SETENA N° D1-0773-2024, proyecto Condominio Residencial Comercial Turístico de FFPI Místico IV Playa Hermosa.</textarea></div>
+<div class="form-row"><div class="form-group"><label>Nº Expediente</label><input type="text" id="expediente" value="D1-0773-2024"></div><div class="form-group"><label>Fecha inspección</label><input type="date" id="fecha_inspeccion"></div></div>
+<div class="form-group"><label>Permisiario / Solicitante</label><input type="text" id="permisiario" value="Jardines Místico Doce S.A."></div>
+<div class="form-row"><div class="form-group"><label>Cédula o Jurídica</label><input type="text" id="cedula" value="3-102-059426 (STRATOS FIDUCIARIA LTDA, fiduciario)"></div><div class="form-group"><label>Representante Legal</label><input type="text" id="representante_legal" value="Manuel Cisneros Guislain / Carlos Quesada Moncada"></div></div>
+<div class="form-row"><div class="form-group"><label>Matrícula Registral</label><input type="text" id="matricula" value="6-0019072-000"></div><div class="form-group"><label>Plano Catastrado</label><input type="text" id="plano" value="P-0006568-1991"></div></div>
+<div class="form-group"><label>Área total (ha)</label><input type="number" step="0.01" id="area_total" value="202.18"></div></div>
+
+<div class="card"><div class="card-title"><span class="icon">👤</span> Profesional Responsable</div>
+<div class="form-group"><label>Nombre completo</label><input type="text" id="profesional" value="Ing. Pablo César Sánchez Núñez"></div>
+<div class="form-row"><div class="form-group"><label>Nº CIAGRO</label><input type="text" id="ciagro" value="5504"></div><div class="form-group"><label>Teléfono</label><input type="tel" id="tel_profesional" value="6126-71-23"></div></div>
+<div class="form-group"><label>Correo electrónico</label><input type="email" id="email_profesional" placeholder="correo@ejemplo.com"></div></div>
+
+<div class="card"><div class="card-title"><span class="icon">👥</span> Personal de Campo</div>
+<div class="participant-card"><div class="participant-header"><span class="participant-title">🌲 Asist. Dasonomía</span></div>
+<div class="form-group"><label>Nombre</label><input type="text" id="asist_daso" value="Federico Berrocal Saborío"></div></div>
+<div class="participant-card"><div class="participant-header"><span class="participant-title">📝 Asist. Registro</span></div>
+<div class="form-group"><label>Nombre</label><input type="text" id="asist_reg" value="Viviana Arias Quesada"></div></div>
+<div id="personalContainer"></div>
+<button class="btn btn-accent btn-block" onclick="addPersonal()">＋ Agregar Personal Adicional</button></div>
+
+<div class="card"><div class="card-title"><span class="icon">🤝</span> Representación del Solicitante</div>
+<div class="info-box">Personas presentes en representación del permisiario o solicitante durante la inspección.</div>
+<div id="representantesContainer"></div>
+<button class="btn btn-outline btn-block" onclick="addRepresentante()">＋ Agregar Representante</button></div>
+
+<div class="section-nav"><button class="nav-arrow next" onclick="goTo(1)">Ubicación →</button></div>
+</div>
+
+<!-- ===================== SECTION 1: UBICACIÓN ===================== -->
+<div class="section" id="sec-1">
+<h2 class="section-title">Ubicación</h2>
+<p class="section-desc">Localización administrativa y coordenadas del sitio.</p>
+<div class="card"><div class="card-title"><span class="icon">📍</span> División Administrativa</div>
+<div class="form-row"><div class="form-group"><label>Provincia</label><input type="text" id="provincia" value="Puntarenas"></div><div class="form-group"><label>Cantón</label><input type="text" id="canton" value="Garabito"></div></div>
+<div class="form-row"><div class="form-group"><label>Distrito</label><input type="text" id="distrito" value="Jacó"></div><div class="form-group"><label>Caserío / Señales</label><input type="text" id="caserio" value="Playa Hermosa"></div></div></div>
+<div class="card"><div class="card-title"><span class="icon">🛰️</span> Coordenadas</div>
+<div class="info-box">Capture GPS (WGS84). Convierta a CRTM05 en gabinete con QGIS.</div>
+<div class="gps-display"><div class="gps-dot" id="gpsDot"></div><span id="gpsStatus">Toque para capturar GPS</span></div>
+<button class="btn btn-primary btn-block" onclick="captureGPS()" style="margin-bottom:10px">📡 Capturar GPS</button>
+<div class="form-row"><div class="form-group"><label>Latitud (WGS84)</label><input type="text" id="gps_lat" placeholder="9.5684"></div><div class="form-group"><label>Longitud (WGS84)</label><input type="text" id="gps_lon" placeholder="-84.5773"></div></div>
+<div class="form-row"><div class="form-group"><label>Precisión (m)</label><input type="text" id="gps_precision" readonly></div><div class="form-group"><label>Elevación (msnm)</label><input type="text" id="gps_elev"></div></div>
+<div class="form-row"><div class="form-group"><label>Coord X (CRTM05)</label><input type="text" id="coord_x" value="437828.066"></div><div class="form-group"><label>Coord Y (CRTM05)</label><input type="text" id="coord_y" value="1058160.567"></div></div></div>
+<div class="card"><div class="card-title"><span class="icon">🚗</span> Traslados</div>
+<div class="form-row"><div class="form-group"><label>Oficina→Finca (Sal.)</label><input type="time" id="traslado_sal1"></div><div class="form-group"><label>Oficina→Finca (Lleg.)</label><input type="time" id="traslado_lleg1"></div></div>
+<div class="form-group"><label>Transporte</label><input type="text" id="transporte1" placeholder="Vehículo 4x4"></div>
+<div class="form-row"><div class="form-group"><label>Finca→Sitio (Sal.)</label><input type="time" id="traslado_sal2"></div><div class="form-group"><label>Finca→Sitio (Lleg.)</label><input type="time" id="traslado_lleg2"></div></div>
+<div class="form-group"><label>Transporte</label><input type="text" id="transporte2" placeholder="A pie"></div>
+<div class="form-row"><div class="form-group"><label>Perímetro→Parcela (Sal.)</label><input type="time" id="traslado_sal3"></div><div class="form-group"><label>Perímetro→Parcela (Lleg.)</label><input type="time" id="traslado_lleg3"></div></div>
+<div class="form-group"><label>Transporte</label><input type="text" id="transporte3" placeholder="A pie"></div></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(0)">← General</button><button class="nav-arrow next" onclick="goTo(2)">Entorno →</button></div>
+</div>
+
+<!-- ===================== SECTION 2: ENTORNO ===================== -->
+<div class="section" id="sec-2">
+<h2 class="section-title">Entorno</h2>
+<p class="section-desc">Relieve, paisaje y registro fotográfico (Actividad 4, Fallas 2019).</p>
+<div class="card"><div class="card-title"><span class="icon">⛰️</span> Posición Topográfica</div>
+<div class="info-box">Cuadro 1, Fallas 2019.</div>
+<div class="toggle-group" id="topoGroup"><div class="toggle-btn" data-val="1" onclick="togSel(this,'topo')">Llanura</div><div class="toggle-btn" data-val="2" onclick="togSel(this,'topo')">Ladera inf.</div><div class="toggle-btn" data-val="3" onclick="togSel(this,'topo')">Ladera med.</div><div class="toggle-btn" data-val="4" onclick="togSel(this,'topo')">Ladera sup.</div><div class="toggle-btn" data-val="5" onclick="togSel(this,'topo')">Cumbre</div><div class="toggle-btn" data-val="6" onclick="togSel(this,'topo')">Depresión</div></div></div>
+<div class="card"><div class="card-title"><span class="icon">🏘️</span> Asentamientos</div>
+<div class="toggle-group" id="asentGroup"><div class="toggle-btn" data-val="1" onclick="togSel(this,'asent')">&lt;5 años</div><div class="toggle-btn" data-val="2" onclick="togSel(this,'asent')">5-10</div><div class="toggle-btn" data-val="3" onclick="togSel(this,'asent')">11-20</div><div class="toggle-btn" data-val="4" onclick="togSel(this,'asent')">21-50</div><div class="toggle-btn" data-val="5" onclick="togSel(this,'asent')">&gt;50</div><div class="toggle-btn" data-val="-9" onclick="togSel(this,'asent')">Desc.</div></div></div>
+<div class="card"><div class="card-title"><span class="icon">🌄</span> Cobertura del Entorno</div>
+<div class="info-box">Cuadro 2, Fallas 2019.</div>
+<div id="coberturaEntorno"></div></div>
+<div class="card"><div class="card-title"><span class="icon">📝</span> Observaciones del Entorno</div>
+<div class="form-group"><label>Observaciones</label><textarea id="obs_entorno" placeholder="Condiciones generales del sitio, accesos, aspectos relevantes del paisaje..."></textarea></div></div>
+<div class="card"><div class="card-title"><span class="icon">📷</span> Fotos del Entorno</div>
+<div class="info-box">Fotos geoetiquetadas N, E, S, O. Cámara ~1.50m. Sin zum.</div>
+<input type="file" id="fotosEntorno" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,'entorno')">
+<button class="btn btn-outline btn-block" onclick="document.getElementById('fotosEntorno').click()">📸 Agregar fotos del entorno</button>
+<div class="photo-grid" id="photosEntorno"></div></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(1)">← Ubicación</button><button class="nav-arrow next" onclick="goTo(3)">Parcelas →</button></div>
+</div>
+
+<!-- ===================== SECTION 3: PARCELAS ===================== -->
+<div class="section" id="sec-3">
+<h2 class="section-title">Parcelas</h2>
+<p class="section-desc">Parcelas de 500 m² (20×25m o r=12.6m). Mínimo 4 para 2 ha.</p>
+<button class="btn btn-accent btn-block" onclick="addParcela()" style="margin-bottom:12px">＋ Nueva parcela</button>
+<div class="parcela-tab-bar" id="parcelaTabBar"></div>
+<div id="parcelasContainer"><p style="color:var(--text-muted);font-size:13px;text-align:center;padding:30px">Agregue al menos 4 parcelas de 500 m²</p></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(2)">← Entorno</button><button class="nav-arrow next" onclick="goTo(4)">Árb. Grandes →</button></div>
+</div>
+
+<!-- ===================== SECTION 4: ÁRBOLES GRANDES ===================== -->
+<div class="section" id="sec-4">
+<h2 class="section-title">Árboles Grandes</h2>
+<p class="section-desc">DAP ≥ 40-50 cm fuera de parcelas, dentro del polígono 2 ha (Cuadro 7, Fallas 2019).</p>
+<div class="card"><div class="info-box">Al trasladarse entre parcelas, registre con foto y punto GNSS cualquier árbol de grandes dimensiones.</div>
+<button class="btn btn-accent btn-block" onclick="addArbolGrande()">＋ Registrar árbol grande</button>
+<div id="arbolesGrandesContainer" style="margin-top:12px"></div></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(3)">← Parcelas</button><button class="nav-arrow next" onclick="goTo(5)">Síntesis →</button></div>
+</div>
+
+<!-- ===================== SECTION 5: SÍNTESIS ===================== -->
+<div class="section" id="sec-5">
+<h2 class="section-title">Síntesis y Dictamen</h2>
+<p class="section-desc">¿Es el sitio muestreado un bosque según Art. 3 Ley Forestal 7575?</p>
+<div class="card"><div class="card-title"><span class="icon">🔍</span> Variables Diagnósticas</div>
+<div class="info-box">Los 7 atributos deben cumplirse simultáneamente (validez convergente, Fallas 2019).</div>
+<div id="diagnosticContainer"></div></div>
+<div class="card"><div class="card-title"><span class="icon">📝</span> Resultado Final</div>
+<div class="form-group"><label>Decisión</label><select id="decision_final"><option value="">— Seleccione —</option><option value="es_bosque">Es bosque</option><option value="no_es_bosque">No es bosque</option><option value="requiere_mas_datos">Requiere más datos</option></select></div>
+<div class="form-group"><label>Observaciones / Recomendaciones</label><textarea id="observaciones_final" rows="5" placeholder="Conclusión general con base en la evidencia recabada..."></textarea></div></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(4)">← Árb. Grandes</button><button class="nav-arrow next" onclick="goTo(6)">Exportar →</button></div>
+</div>
+
+<!-- ===================== SECTION 6: EXPORTAR ===================== -->
+<div class="section" id="sec-6">
+<h2 class="section-title">Exportar Datos</h2>
+<p class="section-desc">Descargue toda la información recopilada.</p>
+<div class="export-card"><h3>📦 Exportar como ZIP</h3><p>Incluye: datos JSON, fotos, GPS (GeoJSON), CSVs de árboles/renovales/cobertura y dictamen.</p>
+<button class="btn btn-accent btn-block" onclick="exportZIP()" style="font-size:16px;padding:16px">⬇ Descargar ZIP</button></div>
+<div class="card"><button class="btn btn-outline btn-block" onclick="shareData()">📤 Compartir archivo</button></div>
+<div class="card"><div class="card-title"><span class="icon">💾</span> Borradores locales</div>
+<div class="btn-group"><button class="btn btn-primary btn-sm" onclick="saveDraft()">💾 Guardar</button><button class="btn btn-outline btn-sm" onclick="loadDraft()">📂 Cargar</button><button class="btn btn-danger btn-sm" onclick="clearDraft()">🗑 Borrar</button></div></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(5)">← Síntesis</button></div>
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav"><div class="bottom-nav-item active" onclick="goTo(0)"><span class="nav-icon">📋</span><span class="nav-label">General</span></div><div class="bottom-nav-item" onclick="goTo(1)"><span class="nav-icon">📍</span><span class="nav-label">Ubicación</span></div><div class="bottom-nav-item" onclick="goTo(2)"><span class="nav-icon">⛰️</span><span class="nav-label">Entorno</span></div><div class="bottom-nav-item" onclick="goTo(3)"><span class="nav-icon">📐</span><span class="nav-label">Parcelas</span></div><div class="bottom-nav-item" onclick="goTo(4)"><span class="nav-icon">🌲</span><span class="nav-label">Árboles</span></div><div class="bottom-nav-item" onclick="goTo(5)"><span class="nav-icon">🔍</span><span class="nav-label">Síntesis</span></div><div class="bottom-nav-item" onclick="goTo(6)"><span class="nav-icon">📦</span><span class="nav-label">Exportar</span></div></nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ===== STATE =====
+const S={
+general:{},ubicacion:{},
+entorno:{topo:null,asentamiento:null,coberturas:{}},
+parcelas:[],arbolesGrandes:[],personalAdicional:[],representantes:[],
+sintesis:{diagnostico:{},decision:'',observaciones:''},
+activeParcela:0
+};
+const photoStore={entorno:[]};
+const SECTIONS=['Datos Generales','Ubicación','Entorno','Parcelas','Árb. Grandes','Síntesis','Exportar'];
+let currentSection=0;
+const coberturaOpts=['Cobertura arbórea densa','Cobertura arbórea rala','Cultivo subsistencia','Banano','Plátano','Piña','Naranja','Arroz','Café','Palma africana','Ganadería','Plantación forestal','Casas aisladas'];
+const diagVars=[{id:'eco_nativo',label:'Ecosistema nativo o autóctono, intervenido o no'},{id:'regenerado',label:'Regenerado por sucesión natural u otras técnicas forestales'},{id:'area_2ha',label:'Ocupa superficie de dos o más hectáreas'},{id:'arboles_maduros',label:'Presencia de árboles maduros de diferentes edades, especies y porte variado'},{id:'doseles',label:'Uno o más doseles'},{id:'cobertura_70',label:'Cobertura del dosel > 70% de la superficie'},{id:'densidad_60',label:'Densidad ≥ 15 cm DAP > 60 árboles/ha'}];
+const ecoChecks=[{cat:'nativo',items:['Comunidad vegetal/animal cuya área natural corresponde al territorio nacional','Vegetación compuesta mayormente por especies nativas','Dosel arbóreo con altura ≥ 5 m','Especies nativas plantadas','Especies exóticas plantadas']},{cat:'intervenido',items:['Caminos','Senderos','Árboles quemados','Árboles talados','Tocones','Cultivos agrícolas','Gramíneas cultivadas (pasto)','Estiércol de vacunos','Claros por aprovechamiento forestal','Residuos de aprovechamiento (aserrín, costillas, tablas)','Árboles en pie dañados por aprovechamiento','Socola','Evidencia de aprovechamiento en cauce']}];
+const regenChecks=['Árboles de diferentes diámetros (estructura disetánea)','Árboles de diferente porte (altura, doseles)','Sotobosque y mantillo forestal bien establecido','Aperturas o claros pequeños comunes','Aperturas o claros grandes infrecuentes','Especies nativas plantadas','Especies exóticas plantadas','Plantación forestal abandonada','Plantación/siembra de árboles en terreno con cobertura forestal','Cultivos agrícolas'];
+
+// ===== STEP DOTS =====
+(function(){const d=document.getElementById('stepDots');SECTIONS.forEach((_,i)=>{const dot=document.createElement('div');dot.className='step-dot'+(i===0?' active':'');dot.onclick=()=>goTo(i);d.appendChild(dot)})})();
+
+// ===== NAVIGATION =====
+function goTo(idx){
+currentSection=idx;
+document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===idx));
+document.querySelectorAll('.bottom-nav-item').forEach((n,i)=>n.classList.toggle('active',i===idx));
+document.querySelectorAll('.step-dot').forEach((d,i)=>{d.className='step-dot'+(i<idx?' done':'')+(i===idx?' active':'')});
+document.getElementById('stepBadge').textContent=(idx+1)+' / 7';
+document.getElementById('stepTitle').textContent=SECTIONS[idx];
+window.scrollTo({top:0,behavior:'smooth'});
+}
+function togSel(el,key){el.parentElement.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');if(key==='topo')S.entorno.topo=el.dataset.val;if(key==='asent')S.entorno.asentamiento=el.dataset.val;}
+function togYN(el){el.parentElement.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
+
+// Swipe
+let tX=0,tY=0;
+document.addEventListener('touchstart',e=>{tX=e.touches[0].clientX;tY=e.touches[0].clientY},{passive:true});
+document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tX,dy=e.changedTouches[0].clientY-tY;if(Math.abs(dx)>80&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx<0&&currentSection<6)goTo(currentSection+1);else if(dx>0&&currentSection>0)goTo(currentSection-1)}},{passive:true});
+
+// ===== GPS =====
+function captureGPS(){const s=document.getElementById('gpsStatus'),d=document.getElementById('gpsDot');if(!navigator.geolocation){s.textContent='GPS no disponible';return}s.textContent='Obteniendo...';d.classList.add('active');navigator.geolocation.getCurrentPosition(p=>{document.getElementById('gps_lat').value=p.coords.latitude.toFixed(6);document.getElementById('gps_lon').value=p.coords.longitude.toFixed(6);document.getElementById('gps_precision').value=p.coords.accuracy?p.coords.accuracy.toFixed(0)+'m':'';document.getElementById('gps_elev').value=p.coords.altitude?p.coords.altitude.toFixed(0):'';s.textContent=p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5)},err=>{s.textContent='Error: '+err.message;d.classList.remove('active')},{enableHighAccuracy:true,timeout:15000})}
+
+// ===== PERSONAL DE CAMPO (solo nombre) =====
+function addPersonal(){S.personalAdicional.push({nombre:''});renderPersonal()}
+function renderPersonal(){const c=document.getElementById('personalContainer');c.innerHTML='';S.personalAdicional.forEach((p,i)=>{const d=document.createElement('div');d.className='participant-card';d.innerHTML='<div class="participant-header"><span class="participant-title">👤 Personal Adicional '+(i+1)+'</span><button class="btn btn-danger btn-sm btn-icon" onclick="S.personalAdicional.splice('+i+',1);renderPersonal()">×</button></div><div class="form-group"><label>Nombre</label><input type="text" value="'+p.nombre+'" onchange="S.personalAdicional['+i+'].nombre=this.value" placeholder="Nombre completo"></div>';c.appendChild(d)})}
+
+// ===== REPRESENTANTES DEL SOLICITANTE (nombre, cédula, tel, anotación) =====
+function addRepresentante(){S.representantes.push({nombre:'',cedula:'',telefono:'',anotacion:''});renderRepresentantes()}
+function renderRepresentantes(){const c=document.getElementById('representantesContainer');c.innerHTML='';S.representantes.forEach((r,i)=>{const d=document.createElement('div');d.className='participant-card';d.innerHTML='<div class="participant-header"><span class="participant-title">🤝 Representante '+(i+1)+'</span><button class="btn btn-danger btn-sm btn-icon" onclick="S.representantes.splice('+i+',1);renderRepresentantes()">×</button></div><div class="form-group"><label>Nombre completo</label><input type="text" value="'+r.nombre+'" onchange="S.representantes['+i+'].nombre=this.value" placeholder="Nombre del representante"></div><div class="form-row"><div class="form-group"><label>Nº Cédula</label><input type="text" value="'+r.cedula+'" onchange="S.representantes['+i+'].cedula=this.value" placeholder="Cédula de identidad"></div><div class="form-group"><label>Teléfono</label><input type="tel" value="'+r.telefono+'" onchange="S.representantes['+i+'].telefono=this.value" placeholder="Teléfono"></div></div><div class="form-group"><label>Anotación</label><textarea onchange="S.representantes['+i+'].anotacion=this.value" placeholder="Rol, relación con el solicitante, observaciones..." style="min-height:60px">'+r.anotacion+'</textarea></div>';c.appendChild(d)})}
+
+// ===== PHOTOS =====
+function handlePhotos(ev,cat,sub){const files=ev.target.files;for(const f of files){const r=new FileReader();r.onload=e=>{const k=sub!==undefined?cat+'_'+sub:cat;if(!photoStore[k])photoStore[k]=[];photoStore[k].push({name:f.name,data:e.target.result,type:f.type});renderPhotos(k,sub!==undefined?'photos_'+cat+'_'+sub:'photos'+cat.charAt(0).toUpperCase()+cat.slice(1))};r.readAsDataURL(f)}ev.target.value=''}
+function renderPhotos(k,cid){const c=document.getElementById(cid);if(!c)return;c.innerHTML='';(photoStore[k]||[]).forEach((p,i)=>{const d=document.createElement('div');d.className='photo-thumb';d.innerHTML='<img src="'+p.data+'"><button class="remove-photo" onclick="photoStore[\''+k+'\'].splice('+i+',1);renderPhotos(\''+k+'\',\''+cid+'\')">×</button>';c.appendChild(d)})}
+
+// ===== COBERTURA ENTORNO =====
+(function(){const c=document.getElementById('coberturaEntorno');coberturaOpts.forEach(o=>{const d=document.createElement('div');d.className='checklist-item';d.innerHTML='<input type="checkbox" style="width:22px;height:22px;flex-shrink:0;accent-color:var(--accent)" onchange="S.entorno.coberturas[\''+o+'\']=this.checked"><span class="checklist-label">'+o+'</span>';c.appendChild(d)})})();
+
+// ===== PARCELAS =====
+function addParcela(){const i=S.parcelas.length;S.parcelas.push({id:i+1,gps:{lat:'',lon:'',prec:'',elev:''},hi:'',hf:'',tipo:'circular',eco:{},regen:{},arboles:[],renovales:[],dosel:{centro:0,no:0,ne:0,so:0,se:0},obs:''});renderPTabs();selParcela(i)}
+function renderPTabs(){const b=document.getElementById('parcelaTabBar');b.innerHTML='';S.parcelas.forEach((_,i)=>{const t=document.createElement('div');t.className='parcela-tab'+(i===S.activeParcela?' active':'');t.textContent='P'+(i+1);t.onclick=()=>selParcela(i);b.appendChild(t)})}
+function selParcela(i){S.activeParcela=i;renderPTabs();renderParcela(i)}
+function renderParcela(idx){const p=S.parcelas[idx],c=document.getElementById('parcelasContainer'),id='p'+idx;
+let ecoH='';ecoChecks.forEach(g=>{ecoH+='<div style="font-weight:700;font-size:11px;margin:8px 0 4px;color:var(--primary);text-transform:uppercase">'+(g.cat==='nativo'?'🌿 Nativo/Autóctono':'⚠️ Intervención')+'</div>';g.items.forEach(it=>{const k=g.cat+'_'+it.replace(/[^a-zA-Z]/g,'_').substring(0,30);const v=p.eco[k]||'';ecoH+='<div class="checklist-item"><span class="checklist-label">'+it+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm '+(v==='si'?'active':'')+'" onclick="S.parcelas['+idx+'].eco[\''+k+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm '+(v==='no'?'active':'')+'" onclick="S.parcelas['+idx+'].eco[\''+k+'\']=\'no\';togYN(this)">No</div></div></div>'})});
+let regH='';regenChecks.forEach(it=>{const k='r_'+it.replace(/[^a-zA-Z]/g,'_').substring(0,30);const v=p.regen[k]||'';regH+='<div class="checklist-item"><span class="checklist-label">'+it+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm '+(v==='si'?'active':'')+'" onclick="S.parcelas['+idx+'].regen[\''+k+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm '+(v==='no'?'active':'')+'" onclick="S.parcelas['+idx+'].regen[\''+k+'\']=\'no\';togYN(this)">No</div></div></div>'});
+c.innerHTML='<div class="card"><div class="card-title"><span class="icon">📐</span> Parcela '+(idx+1)+'</div><button class="btn btn-primary btn-block" onclick="capTime('+idx+',\\'hi\\')" style="font-size:16px;padding:16px;background:'+(p.hi?'var(--success)':'var(--primary)')+'">⏱ '+(p.hi?'INICIADA: '+p.hi:'INICIAR PARCELA')+'</button></div><div class="card"><div class="form-group"><label>Tipo</label><div class="toggle-group"><div class="toggle-btn '+(p.tipo==='circular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'circular\';renderParcela('+idx+')">Circular r=12.6m</div><div class="toggle-btn '+(p.tipo==='rectangular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'rectangular\';renderParcela('+idx+')">Rectangular 20×25</div></div></div><div class="gps-display"><div class="gps-dot '+(p.gps.lat?'active':'')+'"></div><span>'+(p.gps.lat?p.gps.lat+', '+p.gps.lon+' (±'+p.gps.prec+')':'Sin coordenadas')+'</span></div><button class="btn btn-primary btn-block" onclick="capParcelaGPS('+idx+')">📡 Capturar GPS parcela</button></div><div class="card"><div class="card-title"><span class="icon">🌳</span> Ecosistema (Cuadro 3)</div>'+ecoH+'</div><div class="card"><div class="card-title"><span class="icon">🌱</span> Regeneración (Cuadro 4)</div>'+regH+'</div><div class="card"><div class="card-title"><span class="icon">🌲</span> Árboles DAP ≥ 15 cm (Cuadro 5)</div><div class="info-box">Mida DAP de todo árbol vivo ≥ 15 cm. Registre especie y dosel (1-5).</div><button class="btn btn-accent btn-block" onclick="addArbol('+idx+')">＋ Agregar árbol</button><div class="table-scroll"><table class="tree-table" id="'+id+'_at"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">🌿</span> Renovales DAP 2–14.9 cm (Cuadro 6)</div><div class="info-box">2 subparcelas 50 m² (r=3.99m) en cuadrantes NO y SE.</div><button class="btn btn-accent btn-block" onclick="addRenoval('+idx+')">＋ Agregar renoval</button><div class="table-scroll"><table class="tree-table" id="'+id+'_rt"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">📸</span> Cobertura copas (GLAMA)</div><div class="info-box">5 fotos niveladas a 1.3m: centro + NO, NE, SO, SE.</div><div class="form-row"><div class="form-group"><label>% Centro</label><input type="number" step="0.1" value="'+(p.dosel.centro||'')+'" onchange="updDosel('+idx+',\'centro\',this.value)"></div><div class="form-group"><label>% NO</label><input type="number" step="0.1" value="'+(p.dosel.no||'')+'" onchange="updDosel('+idx+',\'no\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% NE</label><input type="number" step="0.1" value="'+(p.dosel.ne||'')+'" onchange="updDosel('+idx+',\'ne\',this.value)"></div><div class="form-group"><label>% SO</label><input type="number" step="0.1" value="'+(p.dosel.so||'')+'" onchange="updDosel('+idx+',\'so\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% SE</label><input type="number" step="0.1" value="'+(p.dosel.se||'')+'" onchange="updDosel('+idx+',\'se\',this.value)"></div><div class="form-group"><label>MEDIA</label><input type="text" id="'+id+'_dm" readonly style="font-weight:700;background:var(--accent-light);color:var(--primary)"></div></div><input type="file" id="'+id+'_fdi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'dosel\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fdi\').click()">📸 Fotos de dosel</button><div class="photo-grid" id="photos_dosel_'+idx+'"></div></div><div class="card"><div class="card-title"><span class="icon">📷</span> Fotos generales</div><input type="file" id="'+id+'_fgi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'parcela\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fgi\').click()">📸 Agregar fotos</button><div class="photo-grid" id="photos_parcela_'+idx+'"></div></div><div class="card"><div class="form-group"><label>Observaciones</label><textarea onchange="S.parcelas['+idx+'].obs=this.value">'+p.obs+'</textarea></div><button class="btn btn-block" onclick="capTime('+idx+',\\'hf\\')" style="margin-top:10px;font-size:16px;padding:16px;background:'+(p.hf?'var(--success)':'var(--accent)')+';color:var(--primary);font-weight:700">⏱ '+(p.hf?'FINALIZADA: '+p.hf:'FINALIZAR PARCELA')+'</button><button class="btn btn-danger btn-block" onclick="remParcela('+idx+')" style="margin-top:10px">🗑 Eliminar P'+(idx+1)+'</button></div>';
+renderArbTable(idx);renderRenTable(idx);renderPhotos('dosel_'+idx,'photos_dosel_'+idx);renderPhotos('parcela_'+idx,'photos_parcela_'+idx);showDoselMedia(idx)}
+function capTime(pi,field){const now=new Date();S.parcelas[pi][field]=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');renderParcela(pi)}
+function capParcelaGPS(i){if(!navigator.geolocation)return alert('GPS no disponible');navigator.geolocation.getCurrentPosition(p=>{S.parcelas[i].gps={lat:p.coords.latitude.toFixed(6),lon:p.coords.longitude.toFixed(6),prec:p.coords.accuracy?p.coords.accuracy.toFixed(0)+'m':'',elev:p.coords.altitude?p.coords.altitude.toFixed(0):''};renderParcela(i)},e=>alert('Error: '+e.message),{enableHighAccuracy:true,timeout:15000})}
+function addArbol(pi){S.parcelas[pi].arboles.push({dap:'',dosel:'',sp:''});renderArbTable(pi)}
+function renderArbTable(pi){const tb=document.querySelector('#p'+pi+'_at tbody');if(!tb)return;tb.innerHTML='';S.parcelas[pi].arboles.forEach((a,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td style="text-align:center;font-weight:700;width:30px">'+(i+1)+'</td><td><input type="number" step="0.1" value="'+a.dap+'" onchange="S.parcelas['+pi+'].arboles['+i+'].dap=this.value" placeholder="cm"></td><td><select onchange="S.parcelas['+pi+'].arboles['+i+'].dosel=this.value"><option value="">—</option><option value="1" '+(a.dosel==='1'?'selected':'')+'>1</option><option value="2" '+(a.dosel==='2'?'selected':'')+'>2</option><option value="3" '+(a.dosel==='3'?'selected':'')+'>3</option><option value="4" '+(a.dosel==='4'?'selected':'')+'>4</option><option value="5" '+(a.dosel==='5'?'selected':'')+'>5</option></select></td><td><input type="text" value="'+a.sp+'" onchange="S.parcelas['+pi+'].arboles['+i+'].sp=this.value" placeholder="Especie"></td><td style="width:36px"><button class="btn btn-danger btn-sm btn-icon" onclick="S.parcelas['+pi+'].arboles.splice('+i+',1);renderArbTable('+pi+')">×</button></td>';tb.appendChild(tr)})}
+function addRenoval(pi){S.parcelas[pi].renovales.push({dap:'',dosel:'',sp:''});renderRenTable(pi)}
+function renderRenTable(pi){const tb=document.querySelector('#p'+pi+'_rt tbody');if(!tb)return;tb.innerHTML='';S.parcelas[pi].renovales.forEach((r,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td style="text-align:center;font-weight:700;width:30px">'+(i+1)+'</td><td><input type="number" step="0.1" value="'+r.dap+'" onchange="S.parcelas['+pi+'].renovales['+i+'].dap=this.value" placeholder="cm"></td><td><select onchange="S.parcelas['+pi+'].renovales['+i+'].dosel=this.value"><option value="">—</option><option value="1" '+(r.dosel==='1'?'selected':'')+'>1</option><option value="2" '+(r.dosel==='2'?'selected':'')+'>2</option><option value="3" '+(r.dosel==='3'?'selected':'')+'>3</option></select></td><td><input type="text" value="'+r.sp+'" onchange="S.parcelas['+pi+'].renovales['+i+'].sp=this.value" placeholder="Especie"></td><td style="width:36px"><button class="btn btn-danger btn-sm btn-icon" onclick="S.parcelas['+pi+'].renovales.splice('+i+',1);renderRenTable('+pi+')">×</button></td>';tb.appendChild(tr)})}
+function updDosel(pi,pt,v){S.parcelas[pi].dosel[pt]=parseFloat(v)||0;showDoselMedia(pi)}
+function showDoselMedia(pi){const d=S.parcelas[pi].dosel,vs=[d.centro,d.no,d.ne,d.so,d.se].filter(v=>v>0),m=vs.length?(vs.reduce((a,b)=>a+b,0)/vs.length):0;const el=document.getElementById('p'+pi+'_dm');if(el)el.value=m>0?m.toFixed(1)+'%':''}
+function remParcela(i){if(!confirm('¿Eliminar P'+(i+1)+'?'))return;S.parcelas.splice(i,1);S.activeParcela=Math.max(0,S.parcelas.length-1);renderPTabs();if(S.parcelas.length>0)renderParcela(S.activeParcela);else document.getElementById('parcelasContainer').innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:30px">Agregue parcelas</p>'}
+
+// ===== ÁRBOLES GRANDES =====
+function addArbolGrande(){S.arbolesGrandes.push({dap:'',dosel:'',sp:'',lat:'',lon:''});renderAG()}
+function renderAG(){const c=document.getElementById('arbolesGrandesContainer');c.innerHTML='';S.arbolesGrandes.forEach((a,i)=>{const d=document.createElement('div');d.className='participant-card';d.style.marginTop='8px';d.innerHTML='<div class="participant-header"><span class="participant-title">🌲 Árbol '+(i+1)+'</span><button class="btn btn-danger btn-sm btn-icon" onclick="S.arbolesGrandes.splice('+i+',1);renderAG()">×</button></div><div class="form-row"><div class="form-group"><label>DAP (cm)</label><input type="number" step="0.1" value="'+a.dap+'" onchange="S.arbolesGrandes['+i+'].dap=this.value"></div><div class="form-group"><label>Dosel</label><select onchange="S.arbolesGrandes['+i+'].dosel=this.value"><option value="">—</option><option value="4" '+(a.dosel==='4'?'selected':'')+'>4 Dosel</option><option value="5" '+(a.dosel==='5'?'selected':'')+'>5 Emerg.</option></select></div></div><div class="form-group"><label>Especie</label><input type="text" value="'+a.sp+'" onchange="S.arbolesGrandes['+i+'].sp=this.value"></div><div class="gps-display"><div class="gps-dot '+(a.lat?'active':'')+'"></div><span>'+(a.lat?a.lat+', '+a.lon:'Sin GPS')+'</span></div><div class="form-row"><button class="btn btn-primary btn-block" onclick="capAGgps('+i+')">📡 GPS</button><div><input type="file" id="fag'+i+'" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos(event,\'ag\','+i+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\'fag'+i+'\').click()">📸</button></div></div><div class="photo-grid" id="photos_ag_'+i+'"></div>';c.appendChild(d);renderPhotos('ag_'+i,'photos_ag_'+i)})}
+function capAGgps(i){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{S.arbolesGrandes[i].lat=p.coords.latitude.toFixed(6);S.arbolesGrandes[i].lon=p.coords.longitude.toFixed(6);renderAG()},e=>alert(e.message),{enableHighAccuracy:true})}
+
+// ===== DIAGNÓSTICO =====
+(function(){const c=document.getElementById('diagnosticContainer');diagVars.forEach(v=>{const d=document.createElement('div');d.className='diagnosis-row';d.innerHTML='<span style="flex:1;line-height:1.4">'+v.label+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm" onclick="S.sintesis.diagnostico[\''+v.id+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm" onclick="S.sintesis.diagnostico[\''+v.id+'\']=\'no\';togYN(this)">No</div></div>';c.appendChild(d)})})();
+
+// ===== COLLECT ALL =====
+function collect(){
+const gf=['objetivo','expediente','fecha_inspeccion','permisiario','cedula','representante_legal','matricula','plano','area_total','profesional','ciagro','tel_profesional','email_profesional','asist_daso','asist_reg'];
+gf.forEach(f=>{S.general[f]=(document.getElementById(f)||{}).value||''});
+const uf=['provincia','canton','distrito','caserio','gps_lat','gps_lon','gps_precision','gps_elev','coord_x','coord_y','traslado_sal1','traslado_lleg1','transporte1','traslado_sal2','traslado_lleg2','transporte2','traslado_sal3','traslado_lleg3','transporte3'];
+uf.forEach(f=>{S.ubicacion[f]=(document.getElementById(f)||{}).value||''});
+S.entorno.obs_entorno=(document.getElementById('obs_entorno')||{}).value||'';
+S.sintesis.decision=document.getElementById('decision_final').value;
+S.sintesis.observaciones=document.getElementById('observaciones_final').value;
+return JSON.parse(JSON.stringify(S));
+}
+
+// ===== EXPORT ZIP =====
+async function exportZIP(){
+const d=collect(),z=new JSZip();
+z.file('datos_determinacion_bosque.json',JSON.stringify(d,null,2));
+let tc='parcela,num,dap_cm,dosel,especie\n';d.parcelas.forEach((p,pi)=>p.arboles.forEach((a,ai)=>{tc+=(pi+1)+','+(ai+1)+','+a.dap+','+a.dosel+',"'+a.sp+'"\n'}));z.file('arboles_dap15.csv',tc);
+let rc='parcela,num,dap_cm,dosel,especie\n';d.parcelas.forEach((p,pi)=>p.renovales.forEach((r,ri)=>{rc+=(pi+1)+','+(ri+1)+','+r.dap+','+r.dosel+',"'+r.sp+'"\n'}));z.file('renovales_dap2_14.csv',rc);
+let lc='num,dap_cm,dosel,especie,lat,lon\n';d.arbolesGrandes.forEach((a,i)=>{lc+=(i+1)+','+a.dap+','+a.dosel+',"'+a.sp+'",'+a.lat+','+a.lon+'\n'});z.file('arboles_grandes.csv',lc);
+let cc='parcela,centro,NO,NE,SO,SE,media\n';d.parcelas.forEach((p,pi)=>{const dd=p.dosel,vs=[dd.centro,dd.no,dd.ne,dd.so,dd.se].filter(v=>v>0),m=vs.length?(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(1):'';cc+=(pi+1)+','+dd.centro+','+dd.no+','+dd.ne+','+dd.so+','+dd.se+','+m+'\n'});z.file('cobertura_copas.csv',cc);
+let dt='SÍNTESIS - DETERMINACIÓN DE BOSQUE\nArt. 3 Ley Forestal 7575 · Protocolo Fallas 2019\n'+'='.repeat(55)+'\nFecha: '+d.general.fecha_inspeccion+'\nExpediente: '+d.general.expediente+'\nProfesional: '+d.general.profesional+' (CIAGRO: '+d.general.ciagro+', Tel: '+d.general.tel_profesional+')\nMatrícula: '+d.general.matricula+' | Plano: '+d.general.plano+'\nÁrea: '+d.general.area_total+' ha\n\nPERSONAL DE CAMPO:\n  Asist. Dasonomía: '+d.general.asist_daso+'\n  Asist. Registro: '+d.general.asist_reg+'\n';
+d.personalAdicional.forEach((p,i)=>{dt+='  Personal Adicional '+(i+1)+': '+p.nombre+'\n'});
+dt+='\nREPRESENTACIÓN DEL SOLICITANTE:\n';
+d.representantes.forEach((r,i)=>{dt+='  Representante '+(i+1)+': '+r.nombre+' | Céd: '+r.cedula+' | Tel: '+r.telefono+'\n    Anotación: '+r.anotacion+'\n'});
+dt+='\nVARIABLES DIAGNÓSTICAS:\n';diagVars.forEach(v=>{dt+='  ['+(d.sintesis.diagnostico[v.id]||'PENDIENTE').toUpperCase()+'] '+v.label+'\n'});
+dt+='\nDECISIÓN: '+d.sintesis.decision+'\n\nOBSERVACIONES:\n'+d.sintesis.observaciones+'\n';
+z.file('dictamen_resumen.txt',dt);
+const ff=z.folder('fotos');for(const[k,ph]of Object.entries(photoStore)){if(ph&&ph.length){const sf=ff.folder(k);ph.forEach((p,i)=>{sf.file(k+'_'+(i+1)+(p.type.includes('png')?'.png':'.jpg'),p.data.split(',')[1],{base64:true})})}}
+const ft=[];if(d.ubicacion.gps_lat&&d.ubicacion.gps_lon)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+d.ubicacion.gps_lon,+d.ubicacion.gps_lat]},properties:{name:'Sitio',type:'sitio'}});
+d.parcelas.forEach((p,i)=>{if(p.gps.lat)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+p.gps.lon,+p.gps.lat]},properties:{name:'P'+(i+1),type:'parcela'}})});
+d.arbolesGrandes.forEach((a,i)=>{if(a.lat)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+a.lon,+a.lat]},properties:{name:'AG'+(i+1),dap:a.dap,sp:a.sp,type:'arbol_grande'}})});
+z.file('puntos_gps.geojson',JSON.stringify({type:'FeatureCollection',features:ft},null,2));
+const bl=await z.generateAsync({type:'blob'}),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download='BosqueCR_'+(d.general.expediente||'sin_exp')+'_'+new Date().toISOString().slice(0,10)+'.zip';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}
+
+// ===== SHARE =====
+async function shareData(){const d=collect(),bl=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),f=new File([bl],'datos_bosque.json',{type:'application/json'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'BosqueCR'})}catch(e){if(e.name!=='AbortError')alert(e.message)}}else alert('Compartir no disponible. Use ZIP.')}
+
+// ===== LOCAL STORAGE =====
+function saveDraft(){const d=collect();d._ps=photoStore;try{localStorage.setItem('bcr',JSON.stringify(d));alert('Borrador guardado.')}catch(e){alert('Error. Exporte ZIP.')}}
+function loadDraft(){const s=localStorage.getItem('bcr');if(!s)return alert('No hay borrador.');if(!confirm('¿Cargar borrador?'))return;try{const d=JSON.parse(s);
+const gf=['objetivo','expediente','fecha_inspeccion','permisiario','cedula','representante_legal','matricula','plano','area_total','profesional','ciagro','tel_profesional','email_profesional','asist_daso','asist_reg'];
+gf.forEach(f=>{const el=document.getElementById(f);if(el&&d.general&&d.general[f])el.value=d.general[f]});
+const uf=['provincia','canton','distrito','caserio','gps_lat','gps_lon','gps_precision','gps_elev','coord_x','coord_y','traslado_sal1','traslado_lleg1','transporte1','traslado_sal2','traslado_lleg2','transporte2','traslado_sal3','traslado_lleg3','transporte3'];
+uf.forEach(f=>{const el=document.getElementById(f);if(el&&d.ubicacion&&d.ubicacion[f])el.value=d.ubicacion[f]});
+S.entorno=d.entorno||S.entorno;S.parcelas=d.parcelas||[];S.arbolesGrandes=d.arbolesGrandes||[];S.personalAdicional=d.personalAdicional||[];S.representantes=d.representantes||[];S.sintesis=d.sintesis||S.sintesis;
+if(S.entorno.obs_entorno){const oe=document.getElementById('obs_entorno');if(oe)oe.value=S.entorno.obs_entorno}
+if(d._ps)Object.assign(photoStore,d._ps);
+renderPersonal();renderRepresentantes();renderPTabs();if(S.parcelas.length>0)selParcela(0);renderAG();
+document.getElementById('decision_final').value=S.sintesis.decision||'';document.getElementById('observaciones_final').value=S.sintesis.observaciones||'';
+alert('Borrador cargado.')}catch(e){alert('Error: '+e.message)}}
+function clearDraft(){if(confirm('¿Eliminar borrador?')){localStorage.removeItem('bcr');alert('Eliminado.')}}
+
+// ===== INIT =====
+document.getElementById('fecha_inspeccion').valueAsDate=new Date();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body>
+</html>

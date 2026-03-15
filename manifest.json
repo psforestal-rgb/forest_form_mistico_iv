@@ -1,0 +1,18 @@
+{
+  "name": "BosqueCR — Determinación de Bosque",
+  "short_name": "BosqueCR",
+  "description": "Colecta de datos para determinación de bosque según Art. 3 Ley Forestal 7575 — Protocolo Fallas 2019",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0ede6",
+  "theme_color": "#14321f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='85' font-size='80'>🌿</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}
