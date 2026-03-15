@@ -546,7 +546,7 @@ function clearDraft(){if(confirm('¿Eliminar borrador?')){localStorage.removeIte
 // ===== MAPA (SECCIÓN 5) =====
 // EPSG:5367 — CRTM05 (basado en SIRGAS 2000 / GRS80, alineado con WGS84)
 const CRTM05_PROJ='+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
-let leafletMap=null,mapMarkers=[],mapUserMarker=null,mapUserCircle=null,mapGpsWatchId=null;
+let leafletMap=null,mapMarkers=[],mapUserMarker=null,mapUserCircle=null,mapGpsWatchId=null,kmlLayerAdded=false;
 let mapNavWatchId=null,mapNavOrientHandler=null,mapNavFilteredHdg=0,mapNavTargetLat=0,mapNavTargetLon=0;
 
 function crtm05toLatLon(x,y){
