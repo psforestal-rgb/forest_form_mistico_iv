@@ -10,6 +10,7 @@
 <title>BosqueCR — Determinación de Bosque Art. 3 Ley 7575</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23102a43'/%3E%3Cpath d='M32 12l12 14h-8v16h9v6H19v-6h9V26h-8l12-14z' fill='%23f5f3ec'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap');
 :root{
@@ -139,7 +140,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .parcela-locked input,.parcela-locked select,.parcela-locked textarea{background:var(--bg2)!important;color:var(--text-muted)!important;cursor:not-allowed!important}
 .parcela-locked .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-unlock{border-color:var(--accent)!important;color:var(--primary)!important;background:#fffbef!important}
-@media(max-width:480px){html{font-size:15px}.form-row,.form-row-3{grid-template-columns:1fr;gap:8px}.section{padding:10px 10px 16px}.card{padding:14px}.section-title{font-size:19px}.diagnosis-row{flex-direction:column;align-items:flex-start;gap:6px}.diagnosis-row .toggle-group{align-self:flex-end}}
+/* SECTION LOCKED — bloqueo real por CSS + pointer-events */
+.sec-locked .toggle-btn:not(.section-lock-toggle){pointer-events:none!important;opacity:.58}
+.sec-locked input:not([type="file"]),.sec-locked select,.sec-locked textarea{background:var(--bg2)!important;color:var(--text-muted)!important;pointer-events:none!important}
+.sec-locked button:not(.section-lock-toggle){pointer-events:none!important;opacity:.5}
+/* MAPA (sec-5) */
+#sec-5{padding:0}
+#sec-5>h2.section-title{padding:14px 14px 2px}
+#sec-5>.section-desc{padding:0 14px 4px}
+#sec-5>.section-nav{padding:10px 14px}
+#sec5-map{height:calc(100dvh - 210px);min-height:280px;width:100%;z-index:1}
+/* Etiquetas de parcela en mapa */
+.map-pid-label{background:rgba(255,255,255,.95);border:1.5px solid #9fb3c8;border-radius:6px;padding:2px 7px;font-weight:800;font-size:11px;color:#102a43;box-shadow:0 1px 5px rgba(0,0,0,.18);white-space:nowrap;pointer-events:none;font-family:'DM Sans',sans-serif}
+.map-pid-label::before{display:none}
+/* Leaflet tipografía */
+.leaflet-container{font-family:'DM Sans',sans-serif}
+@media(max-width:480px){html{font-size:15px}.form-row,.form-row-3{grid-template-columns:1fr;gap:8px}.section{padding:10px 10px 16px}.card{padding:14px}.section-title{font-size:19px}}
 @media(min-width:481px) and (max-width:768px){.form-row-3{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -253,20 +269,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="card"><div class="info-box">Al trasladarse entre parcelas, registre con foto y punto GNSS cualquier árbol de grandes dimensiones.</div>
 <button class="btn btn-accent btn-block" onclick="addArbolGrande()">＋ Registrar árbol grande</button>
 <div id="arbolesGrandesContainer" style="margin-top:12px"></div></div>
-<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(3)">← Parcelas</button><button class="nav-arrow next" onclick="goTo(5)">Síntesis →</button></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(3)">← Parcelas</button><button class="nav-arrow next" onclick="goTo(5)">Mapa →</button></div>
 </div>
 
-<!-- ===================== SECTION 5: SÍNTESIS ===================== -->
+<!-- ===================== SECTION 5: MAPA ===================== -->
 <div class="section" id="sec-5">
-<h2 class="section-title">Síntesis y Dictamen</h2>
-<p class="section-desc">¿Es el sitio muestreado un bosque según Art. 3 Ley Forestal 7575?</p>
-<div class="card"><div class="card-title"><span class="icon">🔍</span> Variables Diagnósticas</div>
-<div class="info-box">Los 7 atributos deben cumplirse simultáneamente (validez convergente, Fallas 2019).</div>
-<div id="diagnosticContainer"></div></div>
-<div class="card"><div class="card-title"><span class="icon">📝</span> Resultado Final</div>
-<div class="form-group"><label>Decisión</label><select id="decision_final"><option value="">— Seleccione —</option><option value="es_bosque">Es bosque</option><option value="no_es_bosque">No es bosque</option><option value="requiere_mas_datos">Requiere más datos</option></select></div>
-<div class="form-group"><label>Observaciones / Recomendaciones</label><textarea id="observaciones_final" rows="5" placeholder="Conclusión general con base en la evidencia recabada..."></textarea></div></div>
+<h2 class="section-title">Mapa</h2>
+<p class="section-desc">Puntos del diseño de muestreo sobre imagen aérea. Toque un punto para navegar o abrir su formulario.</p>
+<div id="sec5-map"></div>
 <div class="section-nav"><button class="nav-arrow prev" onclick="goTo(4)">← Árb. Grandes</button><button class="nav-arrow next" onclick="goTo(6)">Exportar →</button></div>
+</div>
+
+<!-- DASHBOARD DE NAVEGACIÓN (Mapa) -->
+<div id="map-nav-dash" style="display:none;position:fixed;inset:0;background:#0f172a;color:#fff;z-index:9500;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+<div id="map-nav-target" style="position:absolute;top:calc(env(safe-area-inset-top,0px)+16px);left:50%;transform:translateX(-50%);background:rgba(255,255,255,.12);padding:10px 20px;border-radius:20px;font-size:13px;color:#94a3b8;font-weight:600;max-width:90%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+<div style="display:flex;width:100%;justify-content:space-around;padding:0 10px;margin-bottom:18px;margin-top:72px">
+<div style="text-align:center;background:rgba(255,255,255,.08);padding:10px 16px;border-radius:14px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;margin-bottom:3px;letter-spacing:.05em">Precisión GPS</div><div id="map-nav-acc" style="font-size:14px;font-weight:700;color:#fff">--</div></div>
+<div style="text-align:center;background:rgba(255,255,255,.08);padding:10px 16px;border-radius:14px"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;margin-bottom:3px;letter-spacing:.05em">Brújula</div><div id="map-nav-conf" style="font-size:14px;font-weight:700;color:#fff">--</div></div>
+</div>
+<div id="map-nav-arrow-cont" style="width:min(65vw,260px);height:min(65vw,260px);background:#1e293b;border-radius:50%;display:flex;justify-content:center;align-items:center;border:6px solid #334155;margin-bottom:28px;transition:transform .15s ease-out,border-color .3s"><span id="map-nav-arrow" style="font-size:min(28vw,110px);line-height:1;color:#10b981">⬆</span></div>
+<div style="display:flex;width:100%;justify-content:space-around;padding:0 10px;margin-bottom:14px">
+<div style="text-align:center"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;margin-bottom:3px;letter-spacing:.05em">Distancia</div><div id="map-nav-dist" style="font-size:52px;font-weight:900;color:#10b981;line-height:1">--</div><div style="font-size:12px;color:#64748b;margin-top:2px">metros</div></div>
+<div style="text-align:center"><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;margin-bottom:3px;letter-spacing:.05em">Rumbo</div><div id="map-nav-bearing" style="font-size:32px;font-weight:800;color:#fff">--°</div></div>
+</div>
+<div style="font-size:11px;color:#475569;text-align:center;margin-bottom:28px;line-height:1.6">X: <span id="map-nav-dest-x" style="color:#64748b;font-weight:600">--</span> &nbsp;·&nbsp; Y: <span id="map-nav-dest-y" style="color:#64748b;font-weight:600">--</span></div>
+<button onclick="stopMapNavigation()" style="background:#ef4444;color:#fff;border:none;padding:18px 56px;border-radius:100px;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(239,68,68,.3)">SALIR</button>
 </div>
 
 <!-- ===================== SECTION 6: EXPORTAR ===================== -->
@@ -278,14 +305,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="card"><button class="btn btn-outline btn-block" onclick="shareData()">📤 Compartir archivo</button></div>
 <div class="card"><div class="card-title"><span class="icon">💾</span> Borradores locales</div>
 <div class="btn-group"><button class="btn btn-primary btn-sm" onclick="saveDraft()">💾 Guardar</button><button class="btn btn-outline btn-sm" onclick="loadDraft()">📂 Cargar</button><button class="btn btn-danger btn-sm" onclick="clearDraft()">🗑 Borrar</button></div></div>
-<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(5)">← Síntesis</button></div>
+<div class="section-nav"><button class="nav-arrow prev" onclick="goTo(5)">← Mapa</button></div>
 </div>
 
 <!-- BOTTOM NAVIGATION -->
-<nav class="bottom-nav"><div class="bottom-nav-item active" onclick="goTo(0)"><span class="nav-icon">■</span><span class="nav-label">General</span></div><div class="bottom-nav-item" onclick="goTo(1)"><span class="nav-icon">●</span><span class="nav-label">Ubicación</span></div><div class="bottom-nav-item" onclick="goTo(2)"><span class="nav-icon">▲</span><span class="nav-label">Entorno</span></div><div class="bottom-nav-item" onclick="goTo(3)"><span class="nav-icon">▦</span><span class="nav-label">Parcelas</span></div><div class="bottom-nav-item" onclick="goTo(4)"><span class="nav-icon">│</span><span class="nav-label">Árboles</span></div><div class="bottom-nav-item" onclick="goTo(5)"><span class="nav-icon">◌</span><span class="nav-label">Síntesis</span></div><div class="bottom-nav-item" onclick="goTo(6)"><span class="nav-icon">⬒</span><span class="nav-label">Exportar</span></div></nav>
+<nav class="bottom-nav"><div class="bottom-nav-item active" onclick="goTo(0)"><span class="nav-icon">■</span><span class="nav-label">General</span></div><div class="bottom-nav-item" onclick="goTo(1)"><span class="nav-icon">●</span><span class="nav-label">Ubicación</span></div><div class="bottom-nav-item" onclick="goTo(2)"><span class="nav-icon">▲</span><span class="nav-label">Entorno</span></div><div class="bottom-nav-item" onclick="goTo(3)"><span class="nav-icon">▦</span><span class="nav-label">Parcelas</span></div><div class="bottom-nav-item" onclick="goTo(4)"><span class="nav-icon">│</span><span class="nav-label">Árboles</span></div><div class="bottom-nav-item" onclick="goTo(5)"><span class="nav-icon">◎</span><span class="nav-label">Mapa</span></div><div class="bottom-nav-item" onclick="goTo(6)"><span class="nav-icon">⬒</span><span class="nav-label">Exportar</span></div></nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
 <script>
 // ===== STATE =====
 const S={
@@ -296,10 +325,9 @@ sintesis:{diagnostico:{},decision:'',observaciones:''},
 activeParcela:0
 };
 const photoStore={entorno:[]};
-const SECTIONS=['Datos Generales','Ubicación','Entorno','Parcelas','Árb. Grandes','Síntesis','Exportar'];
+const SECTIONS=['Datos Generales','Ubicación','Entorno','Parcelas','Árb. Grandes','Mapa','Exportar'];
 let currentSection=0;
 const coberturaOpts=['Cobertura arbórea densa','Cobertura arbórea rala','Cultivo subsistencia','Banano','Plátano','Piña','Naranja','Arroz','Café','Palma africana','Ganadería','Plantación forestal','Casas aisladas'];
-const diagVars=[{id:'eco_nativo',label:'Ecosistema nativo o autóctono, intervenido o no'},{id:'regenerado',label:'Regenerado por sucesión natural u otras técnicas forestales'},{id:'area_2ha',label:'Ocupa superficie de dos o más hectáreas'},{id:'arboles_maduros',label:'Presencia de árboles maduros de diferentes edades, especies y porte variado'},{id:'doseles',label:'Uno o más doseles'},{id:'cobertura_70',label:'Cobertura del dosel > 70% de la superficie'},{id:'densidad_60',label:'Densidad ≥ 15 cm DAP > 60 árboles/ha'}];
 const ecoChecks=[{cat:'nativo',items:['Comunidad vegetal/animal cuya área natural corresponde al territorio nacional','Vegetación compuesta mayormente por especies nativas','Dosel arbóreo con altura ≥ 5 m','Especies nativas plantadas','Especies exóticas plantadas']},{cat:'intervenido',items:['Caminos','Senderos','Árboles quemados','Árboles talados','Tocones','Cultivos agrícolas','Gramíneas cultivadas (pasto)','Estiércol de vacunos','Claros por aprovechamiento forestal','Residuos de aprovechamiento (aserrín, costillas, tablas)','Árboles en pie dañados por aprovechamiento','Socola','Evidencia de aprovechamiento en cauce']}];
 const regenChecks=['Árboles de diferentes diámetros (estructura disetánea)','Árboles de diferente porte (altura, doseles)','Sotobosque y mantillo forestal bien establecido','Aperturas o claros pequeños comunes','Aperturas o claros grandes infrecuentes','Especies nativas plantadas','Especies exóticas plantadas','Plantación forestal abandonada','Plantación/siembra de árboles en terreno con cobertura forestal','Cultivos agrícolas'];
 
@@ -310,15 +338,15 @@ let pendingDesign=null;
 // ===== STEP DOTS =====
 (function(){const d=document.getElementById('stepDots');SECTIONS.forEach((_,i)=>{const dot=document.createElement('div');dot.className='step-dot'+(i===0?' active':'');dot.onclick=()=>goTo(i);d.appendChild(dot)})})();
 
-// Inject section lock buttons after each section-desc
+// Inject section lock buttons — top (after section-desc) AND bottom (before section-nav)
 (function(){SECTIONS.forEach((_,i)=>{
+  if(i===5)return; // sec-5 es el mapa, sin contenido editable
   const sec=document.getElementById('sec-'+i);if(!sec)return;
-  const btn=document.createElement('button');
-  btn.id='slbtn-'+i;btn.className='btn btn-block section-lock-toggle';
-  btn.onclick=()=>toggleSectionLock(i);
-  btn.innerHTML='🔓 Sección desbloqueada — tocar para bloquear';
+  const makeBtn=(id)=>{const b=document.createElement('button');b.id=id;b.className='btn btn-block section-lock-toggle';b.onclick=()=>toggleSectionLock(i);b.innerHTML='🔓 Sección desbloqueada — tocar para bloquear';return b;};
   const desc=sec.querySelector('.section-desc');
-  if(desc)desc.insertAdjacentElement('afterend',btn);
+  if(desc)desc.insertAdjacentElement('afterend',makeBtn('slbtn-'+i));
+  const nav=sec.querySelector('.section-nav');
+  if(nav)nav.insertAdjacentElement('beforebegin',makeBtn('slbtn-bot-'+i));
 })})();
 
 // ===== NAVIGATION =====
@@ -330,15 +358,22 @@ document.querySelectorAll('.step-dot').forEach((d,i)=>{d.className='step-dot'+(i
 document.getElementById('stepBadge').textContent=(idx+1)+' / 7';
 document.getElementById('stepTitle').textContent=SECTIONS[idx];
 window.scrollTo({top:0,behavior:'smooth'});
+if(idx===5)setTimeout(initMapSection,120);
 }
 function toggleSectionLock(idx){
   sectionLocks[idx]=!sectionLocks[idx];
   const locked=sectionLocks[idx];
+  const txt=locked?'🔒 Sección bloqueada — tocar para editar':'🔓 Sección desbloqueada — tocar para bloquear';
+  const cls='btn btn-block section-lock-toggle'+(locked?' locked':'');
   const btn=document.getElementById('slbtn-'+idx);
-  if(btn){btn.innerHTML=locked?'🔒 Sección bloqueada — tocar para editar':'🔓 Sección desbloqueada — tocar para bloquear';btn.className='btn btn-block section-lock-toggle'+(locked?' locked':'');}
+  const btnBot=document.getElementById('slbtn-bot-'+idx);
+  if(btn){btn.innerHTML=txt;btn.className=cls;}
+  if(btnBot){btnBot.innerHTML=txt;btnBot.className=cls;}
   const sec=document.getElementById('sec-'+idx);
+  // Aplicar clase CSS que bloquea via pointer-events (funciona para divs/toggles también)
+  if(locked){sec.classList.add('sec-locked');}else{sec.classList.remove('sec-locked');}
   if(idx===3){
-    // Section 3: only lock add/import controls; parcela-level has its own lock
+    // Section 3: solo bloquear controles de diseño/agregar; el bloqueo de parcelas es independiente
     sec.querySelectorAll('#design-import-card input,#design-import-card button,.btn-add-parcela').forEach(el=>el.disabled=locked);
   } else {
     sec.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=locked);
@@ -452,9 +487,6 @@ function addArbolGrande(){S.arbolesGrandes.push({dap:'',dosel:'',sp:'',lat:'',lo
 function renderAG(){const c=document.getElementById('arbolesGrandesContainer');c.innerHTML='';S.arbolesGrandes.forEach((a,i)=>{const d=document.createElement('div');d.className='participant-card';d.style.marginTop='8px';d.innerHTML='<div class="participant-header"><span class="participant-title">🌲 Árbol '+(i+1)+'</span><button class="btn btn-danger btn-sm btn-icon" onclick="S.arbolesGrandes.splice('+i+',1);renderAG()">×</button></div><div class="form-row"><div class="form-group"><label>DAP (cm)</label><input type="number" step="0.1" value="'+a.dap+'" onchange="S.arbolesGrandes['+i+'].dap=this.value"></div><div class="form-group"><label>Dosel</label><select onchange="S.arbolesGrandes['+i+'].dosel=this.value"><option value="">—</option><option value="4" '+(a.dosel==='4'?'selected':'')+'>4 Dosel</option><option value="5" '+(a.dosel==='5'?'selected':'')+'>5 Emerg.</option></select></div></div><div class="form-group"><label>Especie</label><input type="text" value="'+a.sp+'" onchange="S.arbolesGrandes['+i+'].sp=this.value"></div><div class="gps-display"><div class="gps-dot '+(a.lat?'active':'')+'"></div><span>'+(a.lat?a.lat+', '+a.lon:'Sin GPS')+'</span></div><div class="form-row"><button class="btn btn-primary btn-block" onclick="capAGgps('+i+')">📡 GPS</button><div><input type="file" id="fag'+i+'" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos(event,\'ag\','+i+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\'fag'+i+'\').click()">📸</button></div></div><div class="photo-grid" id="photos_ag_'+i+'"></div>';c.appendChild(d);renderPhotos('ag_'+i,'photos_ag_'+i)})}
 function capAGgps(i){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{S.arbolesGrandes[i].lat=p.coords.latitude.toFixed(6);S.arbolesGrandes[i].lon=p.coords.longitude.toFixed(6);renderAG()},e=>alert(e.message),{enableHighAccuracy:true})}
 
-// ===== DIAGNÓSTICO =====
-(function(){const c=document.getElementById('diagnosticContainer');diagVars.forEach(v=>{const d=document.createElement('div');d.className='diagnosis-row';d.innerHTML='<span style="flex:1;line-height:1.4">'+v.label+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm" onclick="S.sintesis.diagnostico[\''+v.id+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm" onclick="S.sintesis.diagnostico[\''+v.id+'\']=\'no\';togYN(this)">No</div></div>';c.appendChild(d)})})();
-
 // ===== COLLECT ALL =====
 function collect(){
 const gf=['objetivo','expediente','fecha_inspeccion','permisiario','cedula','representante_legal','matricula','plano','area_total','profesional','ciagro','tel_profesional','email_profesional','asist_daso','asist_reg'];
@@ -462,8 +494,6 @@ gf.forEach(f=>{S.general[f]=(document.getElementById(f)||{}).value||''});
 const uf=['provincia','canton','distrito','caserio','gps_lat','gps_lon','gps_precision','gps_elev','coord_x','coord_y','traslado_sal1','traslado_lleg1','transporte1','traslado_sal2','traslado_lleg2','transporte2','traslado_sal3','traslado_lleg3','transporte3'];
 uf.forEach(f=>{S.ubicacion[f]=(document.getElementById(f)||{}).value||''});
 S.entorno.obs_entorno=(document.getElementById('obs_entorno')||{}).value||'';
-S.sintesis.decision=document.getElementById('decision_final').value;
-S.sintesis.observaciones=document.getElementById('observaciones_final').value;
 return JSON.parse(JSON.stringify(S));
 }
 
@@ -479,8 +509,7 @@ let dt='SÍNTESIS - DETERMINACIÓN DE BOSQUE\nArt. 3 Ley Forestal 7575 · Protoc
 d.personalAdicional.forEach((p,i)=>{dt+='  Personal Adicional '+(i+1)+': '+p.nombre+'\n'});
 dt+='\nREPRESENTACIÓN DEL SOLICITANTE:\n';
 d.representantes.forEach((r,i)=>{dt+='  Representante '+(i+1)+': '+r.nombre+' | Céd: '+r.cedula+' | Tel: '+r.telefono+'\n    Anotación: '+r.anotacion+'\n'});
-dt+='\nVARIABLES DIAGNÓSTICAS:\n';diagVars.forEach(v=>{dt+='  ['+(d.sintesis.diagnostico[v.id]||'PENDIENTE').toUpperCase()+'] '+v.label+'\n'});
-dt+='\nDECISIÓN: '+d.sintesis.decision+'\n\nOBSERVACIONES:\n'+d.sintesis.observaciones+'\n';
+dt+='\n[Síntesis y dictamen se completa en gabinete con los datos exportados]\n';
 z.file('dictamen_resumen.txt',dt);
 const ff=z.folder('fotos');for(const[k,ph]of Object.entries(photoStore)){if(ph&&ph.length){const sf=ff.folder(k);ph.forEach((p,i)=>{sf.file(k+'_'+(i+1)+(p.type.includes('png')?'.png':'.jpg'),p.data.split(',')[1],{base64:true})})}}
 const ft=[];if(d.ubicacion.gps_lat&&d.ubicacion.gps_lon)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+d.ubicacion.gps_lon,+d.ubicacion.gps_lat]},properties:{name:'Sitio',type:'sitio'}});
@@ -505,9 +534,182 @@ S.entorno=d.entorno||S.entorno;S.parcelas=d.parcelas||[];S.arbolesGrandes=d.arbo
 if(S.entorno.obs_entorno){const oe=document.getElementById('obs_entorno');if(oe)oe.value=S.entorno.obs_entorno}
 if(d._ps)Object.assign(photoStore,d._ps);
 renderPersonal();renderRepresentantes();renderPTabs();if(S.parcelas.length>0)selParcela(0);renderAG();
-document.getElementById('decision_final').value=S.sintesis.decision||'';document.getElementById('observaciones_final').value=S.sintesis.observaciones||'';
 alert('Borrador cargado.')}catch(e){alert('Error: '+e.message)}}
 function clearDraft(){if(confirm('¿Eliminar borrador?')){localStorage.removeItem('bcr');alert('Eliminado.')}}
+
+// ===== MAPA (SECCIÓN 5) =====
+const CRTM05_PROJ='+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs';
+let leafletMap=null,mapMarkers=[],mapUserMarker=null,mapUserCircle=null,mapGpsWatchId=null;
+let mapNavWatchId=null,mapNavOrientHandler=null,mapNavFilteredHdg=0,mapNavTargetLat=0,mapNavTargetLon=0;
+
+function crtm05toLatLon(x,y){
+  if(typeof proj4==='undefined')return null;
+  try{const r=proj4(CRTM05_PROJ,'WGS84',[parseFloat(x),parseFloat(y)]);return{lat:r[1],lon:r[0]};}
+  catch(e){return null;}
+}
+
+function initMapSection(){
+  if(typeof L==='undefined')return;
+  if(!leafletMap){
+    leafletMap=L.map('sec5-map',{zoomControl:true,tap:true,tapTolerance:15});
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{attribution:'© Google',maxZoom:22,maxNativeZoom:18}).addTo(leafletMap);
+    L.control.scale({imperial:false,maxWidth:100,position:'bottomleft'}).addTo(leafletMap);
+    // Botón centrar en ubicación actual
+    const locBtn=L.control({position:'topleft'});
+    locBtn.onAdd=function(){
+      const d=L.DomUtil.create('div','leaflet-bar leaflet-control');
+      const a=L.DomUtil.create('a','',d);
+      a.href='#';a.title='Mi ubicación';a.innerHTML='📍';
+      a.style.cssText='width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;background:#fff;border-radius:4px;text-decoration:none;';
+      L.DomEvent.on(a,'click',e=>{L.DomEvent.preventDefault(e);if(mapUserMarker)leafletMap.setView(mapUserMarker.getLatLng(),18);else alert('Ubicación GPS no disponible aún.');});
+      return d;
+    };
+    locBtn.addTo(leafletMap);
+  }
+  leafletMap.invalidateSize();
+  renderMapPoints();
+  startMapGPS();
+}
+
+function renderMapPoints(){
+  if(!leafletMap)return;
+  mapMarkers.forEach(m=>leafletMap.removeLayer(m));
+  mapMarkers=[];
+  // Limpiar mensaje vacío previo
+  const prev=document.getElementById('map-empty-msg');if(prev)prev.remove();
+  const bounds=L.latLngBounds();
+  let hasPoints=false;
+
+  S.parcelas.forEach((p,i)=>{
+    let lat=null,lon=null,fromGPS=false;
+    if(p.gps&&p.gps.lat&&p.gps.lon&&p.gps.lat!==''){
+      lat=parseFloat(p.gps.lat);lon=parseFloat(p.gps.lon);fromGPS=true;
+    } else if(p.coord_x_design&&p.coord_y_design&&p.coord_x_design!==''){
+      const w=crtm05toLatLon(p.coord_x_design,p.coord_y_design);
+      if(w){lat=w.lat;lon=w.lon;}
+    }
+    if(!lat||!lon||isNaN(lat)||isNaN(lon))return;
+    const pid=p.customId||('P'+(i+1));
+    // Parcelas con GPS capturado: verde oscuro, más grande; solo diseño: dorado, más pequeño
+    const color=fromGPS?'#0f7a45':'#f0b429';
+    const border=fromGPS?'#14321f':'#102a43';
+    const sz=fromGPS?22:16;
+    const inner=fromGPS?'<div style="width:8px;height:8px;background:#fff;border-radius:50%;opacity:.8"></div>':'';
+    const icon=L.divIcon({className:'',html:'<div style="background:'+color+';width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:3px solid '+border+';box-shadow:0 2px 8px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;">'+inner+'</div>',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+    const marker=L.marker([lat,lon],{icon:icon}).addTo(leafletMap);
+    marker.bindTooltip(pid,{permanent:true,direction:'top',className:'map-pid-label',offset:[0,-(sz/2+4)]});
+    const xD=p.coord_x_design||'—';
+    const yD=p.coord_y_design||'—';
+    const gpsInfo=fromGPS?'<div style="font-size:11px;color:#0f7a45;margin:4px 0 10px;font-weight:600">✅ GPS capturado: '+p.gps.lat+', '+p.gps.lon+'</div>':'<div style="font-size:11px;color:#627d98;margin:4px 0 10px">⚠️ GPS no capturado — coordenadas de diseño</div>';
+    const popHtml='<div style="font-family:DM Sans,sans-serif;min-width:210px">'
+      +'<div style="font-weight:800;font-size:15px;margin-bottom:4px;color:#102a43">📍 Parcela '+pid+'</div>'
+      +gpsInfo
+      +'<div style="font-size:12px;color:#334e68;margin-bottom:2px">X CRTM05: <strong>'+xD+'</strong></div>'
+      +'<div style="font-size:12px;color:#334e68;margin-bottom:12px">Y CRTM05: <strong>'+yD+'</strong></div>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button onclick="startMapNavigation('+lat+','+lon+',\''+pid+'\',\''+xD+'\',\''+yD+'\')" style="flex:1;padding:11px 6px;background:#102a43;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">🧭 Navegar</button>'
+      +'<button onclick="openParcelaForm('+i+')" style="flex:1;padding:11px 6px;background:#f0b429;color:#102a43;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">📝 Formulario</button>'
+      +'</div></div>';
+    marker.bindPopup(popHtml,{maxWidth:270});
+    mapMarkers.push(marker);
+    bounds.extend([lat,lon]);
+    hasPoints=true;
+  });
+
+  if(hasPoints){
+    try{leafletMap.fitBounds(bounds,{padding:[50,50],maxZoom:17});}
+    catch(e){leafletMap.setView([9.9,-84.3],10);}
+  } else {
+    leafletMap.setView([9.9,-84.3],9);
+    const msg=document.createElement('div');
+    msg.id='map-empty-msg';
+    msg.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.96);border-radius:14px;padding:22px 24px;text-align:center;z-index:500;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.15);font-family:DM Sans,sans-serif;';
+    msg.innerHTML='<div style="font-size:28px;margin-bottom:8px">🗺️</div><p style="font-size:14px;color:#334e68;font-weight:700;margin:0">Sin puntos en el mapa</p><p style="font-size:12px;color:#627d98;margin:6px 0 0">Agregue parcelas o importe un diseño de muestreo</p>';
+    document.getElementById('sec5-map').appendChild(msg);
+  }
+}
+
+function startMapGPS(){
+  if(!navigator.geolocation)return;
+  if(mapGpsWatchId)navigator.geolocation.clearWatch(mapGpsWatchId);
+  mapGpsWatchId=navigator.geolocation.watchPosition(pos=>{
+    if(!leafletMap)return;
+    const lat=pos.coords.latitude,lon=pos.coords.longitude,acc=pos.coords.accuracy;
+    if(mapUserMarker)leafletMap.removeLayer(mapUserMarker);
+    if(mapUserCircle)leafletMap.removeLayer(mapUserCircle);
+    mapUserMarker=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(59,130,246,.25),0 2px 8px rgba(0,0,0,.3)"></div>',iconSize:[16,16],iconAnchor:[8,8],zIndexOffset:1000}),zIndexOffset:1000}).addTo(leafletMap);
+    mapUserCircle=L.circle([lat,lon],{radius:acc,color:'#3b82f6',weight:1,opacity:.35,fillOpacity:.08}).addTo(leafletMap);
+  },()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
+}
+
+function openParcelaForm(idx){
+  if(leafletMap)leafletMap.closePopup();
+  goTo(3);
+  if(S.parcelas[idx])setTimeout(()=>selParcela(idx),150);
+}
+
+function startMapNavigation(lat,lon,label,xD,yD){
+  mapNavTargetLat=lat;mapNavTargetLon=lon;
+  document.getElementById('map-nav-target').textContent='→ Parcela '+label;
+  document.getElementById('map-nav-dest-x').textContent=xD||lat.toFixed(6);
+  document.getElementById('map-nav-dest-y').textContent=yD||lon.toFixed(6);
+  if(leafletMap)leafletMap.closePopup();
+  const dash=document.getElementById('map-nav-dash');
+  dash.style.display='flex';
+  // GPS watch
+  if(mapNavWatchId&&navigator.geolocation)navigator.geolocation.clearWatch(mapNavWatchId);
+  if(navigator.geolocation){
+    mapNavWatchId=navigator.geolocation.watchPosition(updateMapNav,()=>{document.getElementById('map-nav-acc').textContent='Sin GPS';},{enableHighAccuracy:true,maximumAge:2000,timeout:15000});
+  }
+  // Orientación
+  startMapNavOrientation();
+}
+
+function updateMapNav(pos){
+  const uLat=pos.coords.latitude,uLon=pos.coords.longitude,acc=pos.coords.accuracy;
+  document.getElementById('map-nav-acc').textContent='±'+Math.round(acc)+'m';
+  // Distancia Haversine
+  const R=6371000,dLat=(mapNavTargetLat-uLat)*Math.PI/180,dLon=(mapNavTargetLon-uLon)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(uLat*Math.PI/180)*Math.cos(mapNavTargetLat*Math.PI/180)*Math.sin(dLon/2)**2;
+  const dist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  document.getElementById('map-nav-dist').textContent=Math.round(dist);
+  // Rumbo
+  const y2=Math.sin(dLon)*Math.cos(mapNavTargetLat*Math.PI/180);
+  const x2=Math.cos(uLat*Math.PI/180)*Math.sin(mapNavTargetLat*Math.PI/180)-Math.sin(uLat*Math.PI/180)*Math.cos(mapNavTargetLat*Math.PI/180)*Math.cos(dLon);
+  const bearing=(Math.atan2(y2,x2)*180/Math.PI+360)%360;
+  document.getElementById('map-nav-bearing').textContent=Math.round(bearing)+'°';
+  // Rotación de flecha
+  let rot=bearing-mapNavFilteredHdg;
+  while(rot>180)rot-=360;while(rot<-180)rot+=360;
+  document.getElementById('map-nav-arrow-cont').style.transform='rotate('+rot+'deg)';
+  if(dist<5&&navigator.vibrate)navigator.vibrate([200,100,200]);
+}
+
+function startMapNavOrientation(){
+  if(typeof DeviceOrientationEvent==='undefined')return;
+  mapNavFilteredHdg=0;
+  mapNavOrientHandler=(e)=>{
+    let h=0;
+    if(e.webkitCompassHeading!==undefined)h=e.webkitCompassHeading;
+    else if(e.alpha!==null)h=(360-e.alpha)%360;
+    let diff=h-mapNavFilteredHdg;
+    if(diff>180)diff-=360;if(diff<-180)diff+=360;
+    mapNavFilteredHdg=(mapNavFilteredHdg+0.3*diff+360)%360;
+    const conf=e.absolute?'Alta':'Normal';
+    document.getElementById('map-nav-conf').textContent=conf;
+  };
+  const reg=()=>{window.addEventListener('deviceorientationabsolute',mapNavOrientHandler,true);window.addEventListener('deviceorientation',mapNavOrientHandler,true);};
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted')reg();}).catch(()=>reg());
+  } else {reg();}
+}
+
+function stopMapNavigation(){
+  if(mapNavWatchId&&navigator.geolocation)navigator.geolocation.clearWatch(mapNavWatchId);
+  if(mapNavOrientHandler){window.removeEventListener('deviceorientationabsolute',mapNavOrientHandler,true);window.removeEventListener('deviceorientation',mapNavOrientHandler,true);}
+  mapNavWatchId=null;mapNavOrientHandler=null;mapNavFilteredHdg=0;
+  document.getElementById('map-nav-dash').style.display='none';
+}
 
 // ===== INIT =====
 document.getElementById('fecha_inspeccion').valueAsDate=new Date();
