@@ -125,6 +125,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .participant-card{background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
 .participant-card .participant-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .participant-card .participant-title{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase}
+/* SECTION LOCK TOGGLE */
+.section-lock-toggle{font-size:13px;font-weight:700;min-height:44px;background:var(--bg2);color:var(--text-muted);border:2px solid var(--border);border-radius:10px;margin-bottom:12px;letter-spacing:.02em}
+.section-lock-toggle.locked{background:var(--danger);color:#fff;border-color:var(--danger)}
 /* PARCELA STATUS BAR */
 .parcela-status-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:var(--bg);border-radius:10px;border:2px solid var(--border)}
 .pstatus-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:4px 12px;border-radius:12px;letter-spacing:.04em;text-transform:uppercase}
@@ -232,7 +235,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="section" id="sec-3">
 <h2 class="section-title">Parcelas</h2>
 <p class="section-desc">Parcelas de 500 m² (20×25m o r=12.6m). Mínimo 4 para 2 ha.</p>
-<button class="btn btn-accent btn-block" onclick="addParcela()" style="margin-bottom:12px">＋ Nueva parcela</button>
+<div class="card" id="design-import-card"><div class="card-title"><span class="icon">📂</span> Diseño de Muestreo</div>
+<div class="info-box">Cargue el archivo del diseño de muestreo (<strong>.xlsx, .csv o .txt</strong>). Columnas requeridas: <code>id</code>, <code>x_crtm05</code>, <code>y_crtm05</code>, <code>selección</code> (x = seleccionada).</div>
+<input type="file" id="designFile" accept=".xlsx,.xls,.csv,.txt,.tsv" style="display:none" onchange="importDesign(event)">
+<button class="btn btn-outline btn-block" onclick="document.getElementById('designFile').click()">📂 Cargar archivo de diseño</button>
+<div id="designPreview" style="margin-top:10px"></div></div>
+<button class="btn btn-accent btn-block btn-add-parcela" onclick="addParcela()" style="margin-bottom:12px">＋ Nueva parcela manual</button>
 <div class="parcela-tab-bar" id="parcelaTabBar"></div>
 <div id="parcelasContainer"><p style="color:var(--text-muted);font-size:13px;text-align:center;padding:30px">Agregue al menos 4 parcelas de 500 m²</p></div>
 <div class="section-nav"><button class="nav-arrow prev" onclick="goTo(2)">← Entorno</button><button class="nav-arrow next" onclick="goTo(4)">Árb. Grandes →</button></div>
@@ -277,6 +285,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <nav class="bottom-nav"><div class="bottom-nav-item active" onclick="goTo(0)"><span class="nav-icon">■</span><span class="nav-label">General</span></div><div class="bottom-nav-item" onclick="goTo(1)"><span class="nav-icon">●</span><span class="nav-label">Ubicación</span></div><div class="bottom-nav-item" onclick="goTo(2)"><span class="nav-icon">▲</span><span class="nav-label">Entorno</span></div><div class="bottom-nav-item" onclick="goTo(3)"><span class="nav-icon">▦</span><span class="nav-label">Parcelas</span></div><div class="bottom-nav-item" onclick="goTo(4)"><span class="nav-icon">│</span><span class="nav-label">Árboles</span></div><div class="bottom-nav-item" onclick="goTo(5)"><span class="nav-icon">◌</span><span class="nav-label">Síntesis</span></div><div class="bottom-nav-item" onclick="goTo(6)"><span class="nav-icon">⬒</span><span class="nav-label">Exportar</span></div></nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ===== STATE =====
 const S={
@@ -294,8 +303,23 @@ const diagVars=[{id:'eco_nativo',label:'Ecosistema nativo o autóctono, interven
 const ecoChecks=[{cat:'nativo',items:['Comunidad vegetal/animal cuya área natural corresponde al territorio nacional','Vegetación compuesta mayormente por especies nativas','Dosel arbóreo con altura ≥ 5 m','Especies nativas plantadas','Especies exóticas plantadas']},{cat:'intervenido',items:['Caminos','Senderos','Árboles quemados','Árboles talados','Tocones','Cultivos agrícolas','Gramíneas cultivadas (pasto)','Estiércol de vacunos','Claros por aprovechamiento forestal','Residuos de aprovechamiento (aserrín, costillas, tablas)','Árboles en pie dañados por aprovechamiento','Socola','Evidencia de aprovechamiento en cauce']}];
 const regenChecks=['Árboles de diferentes diámetros (estructura disetánea)','Árboles de diferente porte (altura, doseles)','Sotobosque y mantillo forestal bien establecido','Aperturas o claros pequeños comunes','Aperturas o claros grandes infrecuentes','Especies nativas plantadas','Especies exóticas plantadas','Plantación forestal abandonada','Plantación/siembra de árboles en terreno con cobertura forestal','Cultivos agrícolas'];
 
+// ===== SECTION LOCKS =====
+const sectionLocks=new Array(7).fill(false);
+let pendingDesign=null;
+
 // ===== STEP DOTS =====
 (function(){const d=document.getElementById('stepDots');SECTIONS.forEach((_,i)=>{const dot=document.createElement('div');dot.className='step-dot'+(i===0?' active':'');dot.onclick=()=>goTo(i);d.appendChild(dot)})})();
+
+// Inject section lock buttons after each section-desc
+(function(){SECTIONS.forEach((_,i)=>{
+  const sec=document.getElementById('sec-'+i);if(!sec)return;
+  const btn=document.createElement('button');
+  btn.id='slbtn-'+i;btn.className='btn btn-block section-lock-toggle';
+  btn.onclick=()=>toggleSectionLock(i);
+  btn.innerHTML='🔓 Sección desbloqueada — tocar para bloquear';
+  const desc=sec.querySelector('.section-desc');
+  if(desc)desc.insertAdjacentElement('afterend',btn);
+})})();
 
 // ===== NAVIGATION =====
 function goTo(idx){
@@ -306,6 +330,20 @@ document.querySelectorAll('.step-dot').forEach((d,i)=>{d.className='step-dot'+(i
 document.getElementById('stepBadge').textContent=(idx+1)+' / 7';
 document.getElementById('stepTitle').textContent=SECTIONS[idx];
 window.scrollTo({top:0,behavior:'smooth'});
+}
+function toggleSectionLock(idx){
+  sectionLocks[idx]=!sectionLocks[idx];
+  const locked=sectionLocks[idx];
+  const btn=document.getElementById('slbtn-'+idx);
+  if(btn){btn.innerHTML=locked?'🔒 Sección bloqueada — tocar para editar':'🔓 Sección desbloqueada — tocar para bloquear';btn.className='btn btn-block section-lock-toggle'+(locked?' locked':'');}
+  const sec=document.getElementById('sec-'+idx);
+  if(idx===3){
+    // Section 3: only lock add/import controls; parcela-level has its own lock
+    sec.querySelectorAll('#design-import-card input,#design-import-card button,.btn-add-parcela').forEach(el=>el.disabled=locked);
+  } else {
+    sec.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=locked);
+    sec.querySelectorAll('button').forEach(el=>{if(!el.classList.contains('section-lock-toggle'))el.disabled=locked;});
+  }
 }
 function togSel(el,key){el.parentElement.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');if(key==='topo')S.entorno.topo=el.dataset.val;if(key==='asent')S.entorno.asentamiento=el.dataset.val;}
 function togYN(el){el.parentElement.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
@@ -334,13 +372,13 @@ function renderPhotos(k,cid){const c=document.getElementById(cid);if(!c)return;c
 (function(){const c=document.getElementById('coberturaEntorno');coberturaOpts.forEach(o=>{const d=document.createElement('div');d.className='checklist-item';d.innerHTML='<input type="checkbox" style="width:22px;height:22px;flex-shrink:0;accent-color:var(--accent)" onchange="S.entorno.coberturas[\''+o+'\']=this.checked"><span class="checklist-label">'+o+'</span>';c.appendChild(d)})})();
 
 // ===== PARCELAS =====
-function addParcela(){const i=S.parcelas.length;S.parcelas.push({id:i+1,gps:{lat:'',lon:'',prec:'',elev:''},hi:'',hf:'',tipo:'circular',eco:{},regen:{},arboles:[],renovales:[],dosel:{centro:0,no:0,ne:0,so:0,se:0},obs:'',locked:false,savedLocal:false});renderPTabs();selParcela(i)}
-function renderPTabs(){const b=document.getElementById('parcelaTabBar');b.innerHTML='';S.parcelas.forEach((_,i)=>{const t=document.createElement('div');t.className='parcela-tab'+(i===S.activeParcela?' active':'');t.textContent='P'+(i+1);t.onclick=()=>selParcela(i);b.appendChild(t)})}
+function addParcela(){const i=S.parcelas.length;S.parcelas.push({id:i+1,gps:{lat:'',lon:'',prec:'',elev:''},hi:'',hf:'',tipo:'circular',eco:{},regen:{},arboles:[],renovales:[],dosel:{centro:0,no:0,ne:0,so:0,se:0},obs:'',locked:false,savedLocal:false,customId:'',coord_x_design:'',coord_y_design:''});renderPTabs();selParcela(i)}
+function renderPTabs(){const b=document.getElementById('parcelaTabBar');b.innerHTML='';S.parcelas.forEach((_,i)=>{const t=document.createElement('div');t.className='parcela-tab'+(i===S.activeParcela?' active':'');t.textContent=S.parcelas[i].customId?S.parcelas[i].customId:'P'+(i+1);t.onclick=()=>selParcela(i);b.appendChild(t)})}
 function selParcela(i){S.activeParcela=i;renderPTabs();renderParcela(i)}
 function renderParcela(idx){const p=S.parcelas[idx],c=document.getElementById('parcelasContainer'),id='p'+idx;
 let ecoH='';ecoChecks.forEach(g=>{ecoH+='<div style="font-weight:700;font-size:11px;margin:8px 0 4px;color:var(--primary);text-transform:uppercase">'+(g.cat==='nativo'?'🌿 Nativo/Autóctono':'⚠️ Intervención')+'</div>';g.items.forEach(it=>{const k=g.cat+'_'+it.replace(/[^a-zA-Z]/g,'_').substring(0,30);const v=p.eco[k]||'';ecoH+='<div class="checklist-item"><span class="checklist-label">'+it+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm '+(v==='si'?'active':'')+'" onclick="S.parcelas['+idx+'].eco[\''+k+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm '+(v==='no'?'active':'')+'" onclick="S.parcelas['+idx+'].eco[\''+k+'\']=\'no\';togYN(this)">No</div></div></div>'})});
 let regH='';regenChecks.forEach(it=>{const k='r_'+it.replace(/[^a-zA-Z]/g,'_').substring(0,30);const v=p.regen[k]||'';regH+='<div class="checklist-item"><span class="checklist-label">'+it+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm '+(v==='si'?'active':'')+'" onclick="S.parcelas['+idx+'].regen[\''+k+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm '+(v==='no'?'active':'')+'" onclick="S.parcelas['+idx+'].regen[\''+k+'\']=\'no\';togYN(this)">No</div></div></div>'});
-c.innerHTML='<div class="parcela-status-bar"><span class="pstatus-badge '+(p.savedLocal?'local-done':'local-pending')+'">'+(p.savedLocal?'✓ Local':'○ Local')+'</span><span class="pstatus-badge cloud-pending">○ Nube</span>'+(p.locked?'<span class="lock-badge">🔒 Bloqueado</span>':'')+' </div><div class="card"><div class="card-title"><span class="icon">📐</span> Parcela '+(idx+1)+'</div><button class="btn btn-primary btn-block" onclick="capTime('+idx+',\'hi\')" style="font-size:16px;padding:16px;background:'+(p.hi?'var(--success)':'var(--primary)')+'">⏱ '+(p.hi?'INICIADA: '+p.hi:'INICIAR PARCELA')+'</button></div><div class="card"><div class="form-group"><label>Tipo</label><div class="toggle-group"><div class="toggle-btn '+(p.tipo==='circular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'circular\';renderParcela('+idx+')">Circular r=12.6m</div><div class="toggle-btn '+(p.tipo==='rectangular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'rectangular\';renderParcela('+idx+')">Rectangular 20×25</div></div></div><div class="gps-display"><div class="gps-dot '+(p.gps.lat?'active':'')+'"></div><span>'+(p.gps.lat?p.gps.lat+', '+p.gps.lon+' (±'+p.gps.prec+')':'Sin coordenadas')+'</span></div><button class="btn btn-primary btn-block" onclick="capParcelaGPS('+idx+')">📡 Capturar GPS parcela</button></div><div class="card"><div class="card-title"><span class="icon">🌳</span> Ecosistema (Cuadro 3)</div>'+ecoH+'</div><div class="card"><div class="card-title"><span class="icon">🌱</span> Regeneración (Cuadro 4)</div>'+regH+'</div><div class="card"><div class="card-title"><span class="icon">🌲</span> Árboles DAP ≥ 15 cm (Cuadro 5)</div><div class="info-box">Mida DAP de todo árbol vivo ≥ 15 cm. Registre especie y dosel (1-5).</div><button class="btn btn-accent btn-block" onclick="addArbol('+idx+')">＋ Agregar árbol</button><div class="table-scroll"><table class="tree-table" id="'+id+'_at"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">🌿</span> Renovales DAP 2–14.9 cm (Cuadro 6)</div><div class="info-box">2 subparcelas 50 m² (r=3.99m) en cuadrantes NO y SE.</div><button class="btn btn-accent btn-block" onclick="addRenoval('+idx+')">＋ Agregar renoval</button><div class="table-scroll"><table class="tree-table" id="'+id+'_rt"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">📸</span> Cobertura copas (GLAMA)</div><div class="info-box">5 fotos niveladas a 1.3m: centro + NO, NE, SO, SE.</div><div class="form-row"><div class="form-group"><label>% Centro</label><input type="number" step="0.1" value="'+(p.dosel.centro||'')+'" onchange="updDosel('+idx+',\'centro\',this.value)"></div><div class="form-group"><label>% NO</label><input type="number" step="0.1" value="'+(p.dosel.no||'')+'" onchange="updDosel('+idx+',\'no\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% NE</label><input type="number" step="0.1" value="'+(p.dosel.ne||'')+'" onchange="updDosel('+idx+',\'ne\',this.value)"></div><div class="form-group"><label>% SO</label><input type="number" step="0.1" value="'+(p.dosel.so||'')+'" onchange="updDosel('+idx+',\'so\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% SE</label><input type="number" step="0.1" value="'+(p.dosel.se||'')+'" onchange="updDosel('+idx+',\'se\',this.value)"></div><div class="form-group"><label>MEDIA</label><input type="text" id="'+id+'_dm" readonly style="font-weight:700;background:var(--accent-light);color:var(--primary)"></div></div><input type="file" id="'+id+'_fdi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'dosel\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fdi\').click()">📸 Fotos de dosel</button><div class="photo-grid" id="photos_dosel_'+idx+'"></div></div><div class="card"><div class="card-title"><span class="icon">📷</span> Fotos generales</div><input type="file" id="'+id+'_fgi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'parcela\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fgi\').click()">📸 Agregar fotos</button><div class="photo-grid" id="photos_parcela_'+idx+'"></div></div><div class="card"><div class="form-group"><label>Observaciones</label><textarea onchange="S.parcelas['+idx+'].obs=this.value">'+p.obs+'</textarea></div><button class="btn btn-block" onclick="capTime('+idx+',\'hf\')" style="margin-top:10px;font-size:16px;padding:16px;background:'+(p.hf?'var(--success)':'var(--accent)')+';color:var(--primary);font-weight:700">⏱ '+(p.hf?'FINALIZADA: '+p.hf:'FINALIZAR PARCELA')+'</button>'+(p.locked?'<button class="btn btn-outline btn-block btn-unlock" onclick="unlockParcela('+idx+')" style="margin-top:10px">✏️ Editar información guardada</button>':'')+'<button class="btn btn-danger btn-block" onclick="remParcela('+idx+')" style="margin-top:10px">🗑 Eliminar P'+(idx+1)+'</button></div>';
+c.innerHTML='<div class="parcela-status-bar"><span class="pstatus-badge '+(p.savedLocal?'local-done':'local-pending')+'">'+(p.savedLocal?'✓ Local':'○ Local')+'</span><span class="pstatus-badge cloud-pending">○ Nube</span>'+(p.locked?'<span class="lock-badge">🔒 Bloqueado</span>':'')+' </div><div class="card"><div class="card-title"><span class="icon">📐</span> Parcela '+(p.customId||idx+1)+'</div><button class="btn btn-primary btn-block" onclick="capTime('+idx+',\'hi\')" style="font-size:16px;padding:16px;background:'+(p.hi?'var(--success)':'var(--primary)')+'">⏱ '+(p.hi?'INICIADA: '+p.hi:'INICIAR PARCELA')+'</button></div><div class="card"><div class="form-group"><label>Tipo</label><div class="toggle-group"><div class="toggle-btn '+(p.tipo==='circular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'circular\';renderParcela('+idx+')">Circular r=12.6m</div><div class="toggle-btn '+(p.tipo==='rectangular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'rectangular\';renderParcela('+idx+')">Rectangular 20×25</div></div></div><div class="gps-display"><div class="gps-dot '+(p.gps.lat?'active':'')+'"></div><span>'+(p.gps.lat?p.gps.lat+', '+p.gps.lon+' (±'+p.gps.prec+')':'Sin coordenadas')+'</span></div><button class="btn btn-primary btn-block" onclick="capParcelaGPS('+idx+')">📡 Capturar GPS parcela</button>'+(p.coord_x_design?'<div class="info-box" style="margin-top:8px;font-size:12px">📐 Diseño CRTM05 — X: <strong>'+p.coord_x_design+'</strong> · Y: <strong>'+p.coord_y_design+'</strong></div>':'')+' </div><div class="card"><div class="card-title"><span class="icon">🌳</span> Ecosistema (Cuadro 3)</div>'+ecoH+'</div><div class="card"><div class="card-title"><span class="icon">🌱</span> Regeneración (Cuadro 4)</div>'+regH+'</div><div class="card"><div class="card-title"><span class="icon">🌲</span> Árboles DAP ≥ 15 cm (Cuadro 5)</div><div class="info-box">Mida DAP de todo árbol vivo ≥ 15 cm. Registre especie y dosel (1-5).</div><button class="btn btn-accent btn-block" onclick="addArbol('+idx+')">＋ Agregar árbol</button><div class="table-scroll"><table class="tree-table" id="'+id+'_at"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">🌿</span> Renovales DAP 2–14.9 cm (Cuadro 6)</div><div class="info-box">2 subparcelas 50 m² (r=3.99m) en cuadrantes NO y SE.</div><button class="btn btn-accent btn-block" onclick="addRenoval('+idx+')">＋ Agregar renoval</button><div class="table-scroll"><table class="tree-table" id="'+id+'_rt"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">📸</span> Cobertura copas (GLAMA)</div><div class="info-box">5 fotos niveladas a 1.3m: centro + NO, NE, SO, SE.</div><div class="form-row"><div class="form-group"><label>% Centro</label><input type="number" step="0.1" value="'+(p.dosel.centro||'')+'" onchange="updDosel('+idx+',\'centro\',this.value)"></div><div class="form-group"><label>% NO</label><input type="number" step="0.1" value="'+(p.dosel.no||'')+'" onchange="updDosel('+idx+',\'no\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% NE</label><input type="number" step="0.1" value="'+(p.dosel.ne||'')+'" onchange="updDosel('+idx+',\'ne\',this.value)"></div><div class="form-group"><label>% SO</label><input type="number" step="0.1" value="'+(p.dosel.so||'')+'" onchange="updDosel('+idx+',\'so\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% SE</label><input type="number" step="0.1" value="'+(p.dosel.se||'')+'" onchange="updDosel('+idx+',\'se\',this.value)"></div><div class="form-group"><label>MEDIA</label><input type="text" id="'+id+'_dm" readonly style="font-weight:700;background:var(--accent-light);color:var(--primary)"></div></div><input type="file" id="'+id+'_fdi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'dosel\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fdi\').click()">📸 Fotos de dosel</button><div class="photo-grid" id="photos_dosel_'+idx+'"></div></div><div class="card"><div class="card-title"><span class="icon">📷</span> Fotos generales</div><input type="file" id="'+id+'_fgi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'parcela\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fgi\').click()">📸 Agregar fotos</button><div class="photo-grid" id="photos_parcela_'+idx+'"></div></div><div class="card"><div class="form-group"><label>Observaciones</label><textarea onchange="S.parcelas['+idx+'].obs=this.value">'+p.obs+'</textarea></div><button class="btn btn-block" onclick="capTime('+idx+',\'hf\')" style="margin-top:10px;font-size:16px;padding:16px;background:'+(p.hf?'var(--success)':'var(--accent)')+';color:var(--primary);font-weight:700">⏱ '+(p.hf?'FINALIZADA: '+p.hf:'FINALIZAR PARCELA')+'</button>'+(p.locked?'<button class="btn btn-outline btn-block btn-unlock" onclick="unlockParcela('+idx+')" style="margin-top:10px">✏️ Editar información guardada</button>':'')+'<button class="btn btn-danger btn-block" onclick="remParcela('+idx+')" style="margin-top:10px">🗑 Eliminar '+(p.customId?'Parcela '+p.customId:'P'+(idx+1))+'</button></div>';
 renderArbTable(idx);renderRenTable(idx);renderPhotos('dosel_'+idx,'photos_dosel_'+idx);renderPhotos('parcela_'+idx,'photos_parcela_'+idx);showDoselMedia(idx);if(p.locked){c.classList.add('parcela-locked');c.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=true);c.querySelectorAll('button').forEach(el=>{if(!el.classList.contains('btn-unlock'))el.disabled=true;})}else{c.classList.remove('parcela-locked')}}
 function capTime(pi,field){const now=new Date();S.parcelas[pi][field]=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');if(field==='hf'){S.parcelas[pi].locked=true;S.parcelas[pi].savedLocal=true;autoSaveDraft();}renderParcela(pi)}
 function capParcelaGPS(i){if(!navigator.geolocation)return alert('GPS no disponible');navigator.geolocation.getCurrentPosition(p=>{S.parcelas[i].gps={lat:p.coords.latitude.toFixed(6),lon:p.coords.longitude.toFixed(6),prec:p.coords.accuracy?p.coords.accuracy.toFixed(0)+'m':'',elev:p.coords.altitude?p.coords.altitude.toFixed(0):''};renderParcela(i)},e=>alert('Error: '+e.message),{enableHighAccuracy:true,timeout:15000})}
@@ -350,7 +388,64 @@ function addRenoval(pi){S.parcelas[pi].renovales.push({dap:'',dosel:'',sp:''});r
 function renderRenTable(pi){const tb=document.querySelector('#p'+pi+'_rt tbody');if(!tb)return;tb.innerHTML='';S.parcelas[pi].renovales.forEach((r,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td style="text-align:center;font-weight:700;width:30px">'+(i+1)+'</td><td><input type="number" step="0.1" value="'+r.dap+'" onchange="S.parcelas['+pi+'].renovales['+i+'].dap=this.value" placeholder="cm"></td><td><select onchange="S.parcelas['+pi+'].renovales['+i+'].dosel=this.value"><option value="">—</option><option value="1" '+(r.dosel==='1'?'selected':'')+'>1</option><option value="2" '+(r.dosel==='2'?'selected':'')+'>2</option><option value="3" '+(r.dosel==='3'?'selected':'')+'>3</option></select></td><td><input type="text" value="'+r.sp+'" onchange="S.parcelas['+pi+'].renovales['+i+'].sp=this.value" placeholder="Especie"></td><td style="width:36px"><button class="btn btn-danger btn-sm btn-icon" onclick="S.parcelas['+pi+'].renovales.splice('+i+',1);renderRenTable('+pi+')">×</button></td>';tb.appendChild(tr)})}
 function updDosel(pi,pt,v){S.parcelas[pi].dosel[pt]=parseFloat(v)||0;showDoselMedia(pi)}
 function showDoselMedia(pi){const d=S.parcelas[pi].dosel,vs=[d.centro,d.no,d.ne,d.so,d.se].filter(v=>v>0),m=vs.length?(vs.reduce((a,b)=>a+b,0)/vs.length):0;const el=document.getElementById('p'+pi+'_dm');if(el)el.value=m>0?m.toFixed(1)+'%':''}
-function remParcela(i){if(!confirm('¿Eliminar P'+(i+1)+'?'))return;S.parcelas.splice(i,1);S.activeParcela=Math.max(0,S.parcelas.length-1);renderPTabs();if(S.parcelas.length>0)renderParcela(S.activeParcela);else document.getElementById('parcelasContainer').innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:30px">Agregue parcelas</p>'}
+function remParcela(i){if(!confirm('¿Eliminar '+(S.parcelas[i].customId?'Parcela '+S.parcelas[i].customId:'P'+(i+1))+'?'))return;S.parcelas.splice(i,1);S.activeParcela=Math.max(0,S.parcelas.length-1);renderPTabs();if(S.parcelas.length>0)renderParcela(S.activeParcela);else document.getElementById('parcelasContainer').innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:30px">Agregue parcelas</p>'}
+
+// ===== IMPORTAR DISEÑO DE MUESTREO =====
+async function importDesign(ev){
+  const file=ev.target.files[0];if(!file)return;ev.target.value='';
+  let rows=[];
+  const ext=file.name.split('.').pop().toLowerCase();
+  try{
+    if(ext==='xlsx'||ext==='xls'){
+      if(typeof XLSX==='undefined')return alert('Librería XLSX no disponible. Use CSV o TXT.');
+      const buf=await file.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    } else {
+      const text=await file.text();
+      const lines=text.trim().split(/\r?\n/);
+      if(lines.length<2)return alert('Archivo vacío o sin datos.');
+      const first=lines[0];
+      const delim=first.includes('\t')?'\t':first.includes(';')?';':',';
+      const hdrs=first.split(delim).map(h=>h.trim().replace(/^"|"$/g,''));
+      rows=lines.slice(1).filter(l=>l.trim()).map(line=>{
+        const vals=line.split(delim).map(v=>v.trim().replace(/^"|"$/g,''));
+        const obj={};hdrs.forEach((h,i)=>obj[h]=vals[i]||'');return obj;
+      });
+    }
+  }catch(e){return alert('Error leyendo archivo: '+e.message);}
+  if(!rows.length)return alert('No se encontraron datos.');
+  // Find column names (case + accent insensitive)
+  const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const hdrs=Object.keys(rows[0]);
+  const findCol=(...names)=>hdrs.find(h=>names.some(n=>norm(h)===n));
+  const colId=findCol('id');
+  const colX=findCol('x_crtm05','xcrtm05','x crtm05','crtm05_x','coord_x','x');
+  const colY=findCol('y_crtm05','ycrtm05','y crtm05','crtm05_y','coord_y','y');
+  const colSel=findCol('seleccion','seleccion','sel','selection','selected','muestreado','incluir');
+  if(!colId||!colX||!colY)return alert('Columnas no encontradas.\nSe requieren: id, x_crtm05, y_crtm05\nColumnas detectadas: '+hdrs.join(', '));
+  const selected=rows.filter(r=>{
+    if(!colSel)return true;
+    const v=(r[colSel]||'').toString().trim().toLowerCase();
+    return v==='x'||v==='si'||v==='sí'||v==='1'||v==='true'||v==='seleccionado';
+  });
+  pendingDesign=selected.map(r=>({id:r[colId].toString().trim(),x:r[colX].toString().trim(),y:r[colY].toString().trim()}));
+  const prev=document.getElementById('designPreview');
+  if(!selected.length){prev.innerHTML='<div class="info-box" style="background:#ffeaea;border-color:var(--danger);color:#7a0a0a">Sin puntos seleccionados. Verifique la columna de selección.</div>';return;}
+  prev.innerHTML='<div class="info-box" style="background:#d1f0e0;border-color:var(--success);color:#0a3d20"><strong>'+rows.length+' puntos totales · '+selected.length+' seleccionados</strong><br>IDs: '+pendingDesign.map(p=>p.id).join(', ')+'</div><button class="btn btn-accent btn-block" onclick="applyDesign()" style="margin-top:8px">✓ Crear '+selected.length+' parcela(s) del diseño</button>';
+}
+function applyDesign(){
+  if(!pendingDesign||!pendingDesign.length)return;
+  if(S.parcelas.length>0&&!confirm('¿Reemplazar las '+S.parcelas.length+' parcela(s) existente(s) con el diseño importado ('+pendingDesign.length+' puntos)?'))return;
+  S.parcelas=[];
+  pendingDesign.forEach((pt,i)=>{
+    S.parcelas.push({id:i+1,customId:pt.id,gps:{lat:'',lon:'',prec:'',elev:''},hi:'',hf:'',tipo:'circular',eco:{},regen:{},arboles:[],renovales:[],dosel:{centro:0,no:0,ne:0,so:0,se:0},obs:'',locked:false,savedLocal:false,coord_x_design:pt.x,coord_y_design:pt.y});
+  });
+  S.activeParcela=0;pendingDesign=null;
+  renderPTabs();selParcela(0);
+  document.getElementById('designPreview').innerHTML='<div class="info-box" style="background:#d1f0e0;border-color:var(--success);color:#0a3d20">✓ '+S.parcelas.length+' parcela(s) creada(s) desde el diseño.</div>';
+}
 
 // ===== ÁRBOLES GRANDES =====
 function addArbolGrande(){S.arbolesGrandes.push({dap:'',dosel:'',sp:'',lat:'',lon:''});renderAG()}
@@ -376,10 +471,10 @@ return JSON.parse(JSON.stringify(S));
 async function exportZIP(){
 const d=collect(),z=new JSZip();
 z.file('datos_determinacion_bosque.json',JSON.stringify(d,null,2));
-let tc='parcela,num,dap_cm,dosel,especie\n';d.parcelas.forEach((p,pi)=>p.arboles.forEach((a,ai)=>{tc+=(pi+1)+','+(ai+1)+','+a.dap+','+a.dosel+',"'+a.sp+'"\n'}));z.file('arboles_dap15.csv',tc);
-let rc='parcela,num,dap_cm,dosel,especie\n';d.parcelas.forEach((p,pi)=>p.renovales.forEach((r,ri)=>{rc+=(pi+1)+','+(ri+1)+','+r.dap+','+r.dosel+',"'+r.sp+'"\n'}));z.file('renovales_dap2_14.csv',rc);
+let tc='parcela_id,num,dap_cm,dosel,especie\n';d.parcelas.forEach((p,pi)=>p.arboles.forEach((a,ai)=>{tc+=(p.customId||pi+1)+','+(ai+1)+','+a.dap+','+a.dosel+',"'+a.sp+'"\n'}));z.file('arboles_dap15.csv',tc);
+let rc='parcela_id,num,dap_cm,dosel,especie\n';d.parcelas.forEach((p,pi)=>p.renovales.forEach((r,ri)=>{rc+=(p.customId||pi+1)+','+(ri+1)+','+r.dap+','+r.dosel+',"'+r.sp+'"\n'}));z.file('renovales_dap2_14.csv',rc);
 let lc='num,dap_cm,dosel,especie,lat,lon\n';d.arbolesGrandes.forEach((a,i)=>{lc+=(i+1)+','+a.dap+','+a.dosel+',"'+a.sp+'",'+a.lat+','+a.lon+'\n'});z.file('arboles_grandes.csv',lc);
-let cc='parcela,centro,NO,NE,SO,SE,media\n';d.parcelas.forEach((p,pi)=>{const dd=p.dosel,vs=[dd.centro,dd.no,dd.ne,dd.so,dd.se].filter(v=>v>0),m=vs.length?(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(1):'';cc+=(pi+1)+','+dd.centro+','+dd.no+','+dd.ne+','+dd.so+','+dd.se+','+m+'\n'});z.file('cobertura_copas.csv',cc);
+let cc='parcela_id,centro,NO,NE,SO,SE,media\n';d.parcelas.forEach((p,pi)=>{const dd=p.dosel,vs=[dd.centro,dd.no,dd.ne,dd.so,dd.se].filter(v=>v>0),m=vs.length?(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(1):'';cc+=(p.customId||pi+1)+','+dd.centro+','+dd.no+','+dd.ne+','+dd.so+','+dd.se+','+m+'\n'});z.file('cobertura_copas.csv',cc);
 let dt='SÍNTESIS - DETERMINACIÓN DE BOSQUE\nArt. 3 Ley Forestal 7575 · Protocolo Fallas 2019\n'+'='.repeat(55)+'\nFecha: '+d.general.fecha_inspeccion+'\nExpediente: '+d.general.expediente+'\nProfesional: '+d.general.profesional+' (CIAGRO: '+d.general.ciagro+', Tel: '+d.general.tel_profesional+')\nMatrícula: '+d.general.matricula+' | Plano: '+d.general.plano+'\nÁrea: '+d.general.area_total+' ha\n\nPERSONAL DE CAMPO:\n  Asist. Dasonomía: '+d.general.asist_daso+'\n  Asist. Registro: '+d.general.asist_reg+'\n';
 d.personalAdicional.forEach((p,i)=>{dt+='  Personal Adicional '+(i+1)+': '+p.nombre+'\n'});
 dt+='\nREPRESENTACIÓN DEL SOLICITANTE:\n';
@@ -389,7 +484,7 @@ dt+='\nDECISIÓN: '+d.sintesis.decision+'\n\nOBSERVACIONES:\n'+d.sintesis.observ
 z.file('dictamen_resumen.txt',dt);
 const ff=z.folder('fotos');for(const[k,ph]of Object.entries(photoStore)){if(ph&&ph.length){const sf=ff.folder(k);ph.forEach((p,i)=>{sf.file(k+'_'+(i+1)+(p.type.includes('png')?'.png':'.jpg'),p.data.split(',')[1],{base64:true})})}}
 const ft=[];if(d.ubicacion.gps_lat&&d.ubicacion.gps_lon)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+d.ubicacion.gps_lon,+d.ubicacion.gps_lat]},properties:{name:'Sitio',type:'sitio'}});
-d.parcelas.forEach((p,i)=>{if(p.gps.lat)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+p.gps.lon,+p.gps.lat]},properties:{name:'P'+(i+1),type:'parcela'}})});
+d.parcelas.forEach((p,i)=>{if(p.gps.lat)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+p.gps.lon,+p.gps.lat]},properties:{name:'Parcela '+(p.customId||i+1),customId:p.customId||'',type:'parcela',coord_x_design:p.coord_x_design||'',coord_y_design:p.coord_y_design||''}})});
 d.arbolesGrandes.forEach((a,i)=>{if(a.lat)ft.push({type:'Feature',geometry:{type:'Point',coordinates:[+a.lon,+a.lat]},properties:{name:'AG'+(i+1),dap:a.dap,sp:a.sp,type:'arbol_grande'}})});
 z.file('puntos_gps.geojson',JSON.stringify({type:'FeatureCollection',features:ft},null,2));
 const bl=await z.generateAsync({type:'blob'}),u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download='BosqueCR_'+(d.general.expediente||'sin_exp')+'_'+new Date().toISOString().slice(0,10)+'.zip';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}
