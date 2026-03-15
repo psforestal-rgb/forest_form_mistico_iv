@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bosquecr-v3';
+const CACHE_NAME = 'bosquecr-v4';
 const ASSETS = [
   './',
   './index.html',
