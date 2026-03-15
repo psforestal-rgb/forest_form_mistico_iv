@@ -6,18 +6,19 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#14321f">
+<meta name="theme-color" content="#102a43">
 <title>BosqueCR — Determinación de Bosque Art. 3 Ley 7575</title>
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23102a43'/%3E%3Cpath d='M32 12l12 14h-8v16h9v6H19v-6h9V26h-8l12-14z' fill='%23f5f3ec'/%3E%3C/svg%3E">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap');
 :root{
---bg:#f0ede6;--bg2:#e4e0d7;--card:#fff;
---primary:#14321f;--primary-light:#1f5432;
---accent:#d4a017;--accent-light:#f5d56e;--accent-bg:rgba(212,160,23,.12);
---text:#111;--text-muted:#555;--text-light:#888;
---border:#c8c4ba;--danger:#c0392b;--success:#1a7a3a;--info:#2a6cb3;
---radius:14px;--shadow:0 2px 10px rgba(0,0,0,.06);
+--bg:#f5f3ec;--bg2:#dedbd1;--card:#fff;
+--primary:#102a43;--primary-light:#163a5c;
+--accent:#f0b429;--accent-light:#ffd778;--accent-bg:rgba(240,180,41,.2);
+--text:#0b141f;--text-muted:#334e68;--text-light:#627d98;
+--border:#9fb3c8;--danger:#b42318;--success:#0f7a45;--info:#005fb8;
+--radius:14px;--shadow:0 2px 12px rgba(16,42,67,.12);
 --bottom-h:68px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -26,26 +27,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* TOP BAR */
 .top-bar{background:var(--primary);color:#fff;padding:10px 16px 6px;position:sticky;top:0;z-index:90;box-shadow:0 2px 16px rgba(0,0,0,.25)}
 .top-bar-row{display:flex;align-items:center;justify-content:space-between}
-.top-bar h1{font-family:'Playfair Display',serif;font-size:16px;font-weight:800}
+.top-bar h1{font-family:'Playfair Display',serif;font-size:17px;font-weight:800;letter-spacing:.01em}
 .step-badge{background:var(--accent);color:var(--primary);font-size:11px;font-weight:800;padding:3px 10px;border-radius:12px}
-.step-title{font-size:11px;opacity:.7;margin-top:2px}
+.step-title{font-size:12px;opacity:.92;margin-top:2px}
 .step-dots{display:flex;gap:4px;margin-top:6px;justify-content:center}
 .step-dot{width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:background .3s;cursor:pointer;min-width:10px}
 .step-dot.done{background:var(--accent)}
 .step-dot.active{background:#fff}
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--primary);display:flex;align-items:stretch;justify-content:space-around;height:var(--bottom-h);box-shadow:0 -3px 20px rgba(0,0,0,.3);padding-bottom:env(safe-area-inset-bottom,0px)}
-.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:rgba(255,255,255,.4);transition:all .15s;user-select:none;padding:4px 0;min-height:48px;position:relative}
+.bottom-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:rgba(255,255,255,.62);transition:all .15s;user-select:none;padding:4px 0;min-height:48px;position:relative}
 .bottom-nav-item:active{opacity:.7;transform:scale(.95)}
 .bottom-nav-item.active{color:var(--accent-light)}
 .bottom-nav-item.active::before{content:'';position:absolute;top:0;left:20%;right:20%;height:3px;background:var(--accent);border-radius:0 0 3px 3px}
-.bottom-nav-item .nav-icon{font-size:20px;line-height:1}
-.bottom-nav-item .nav-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;line-height:1}
+.bottom-nav-item .nav-icon{font-size:17px;line-height:1;font-weight:800}
+.bottom-nav-item .nav-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;line-height:1}
 /* SECTIONS */
 .section{display:none;padding:14px 12px 20px;max-width:720px;margin:0 auto}
 .section.active{display:block}
-.section-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--primary);margin-bottom:2px}
-.section-desc{font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5}
+.section-title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--primary);margin-bottom:2px}
+.section-desc{font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.5}
 /* NAV ARROWS */
 .section-nav{display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:2px solid var(--bg2)}
 .section-nav .nav-arrow{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:16px;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;border:none;min-height:56px;user-select:none;transition:all .15s}
@@ -53,13 +54,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nav-arrow.prev{background:var(--bg2);color:var(--primary)}
 .nav-arrow.next{background:var(--accent);color:var(--primary)}
 /* CARDS */
-.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--border)}
-.card-title{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);border:2px solid var(--border)}
+.card-title{font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .card-title .icon{font-size:16px}
 /* FORMS */
 .form-group{margin-bottom:12px}
 .form-group:last-child{margin-bottom:0}
-.form-group label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.form-group label{display:block;font-size:12px;font-weight:800;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
 .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;background:#fff;color:var(--text);min-height:48px;-webkit-appearance:none;appearance:none;transition:border-color .2s}
 .form-group select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath fill='%23555' d='M7 10L1 4h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
@@ -67,7 +68,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 /* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:14px 20px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:none;min-height:50px;user-select:none;transition:all .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:14px 20px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;cursor:pointer;border:none;min-height:50px;user-select:none;transition:all .15s}
 .btn:active{transform:scale(.97);opacity:.85}
 .btn-primary{background:var(--primary);color:#fff}
 .btn-accent{background:var(--accent);color:var(--primary)}
@@ -80,7 +81,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 /* TOGGLES */
 .toggle-group{display:flex;gap:6px;flex-wrap:wrap}
-.toggle-btn{padding:10px 16px;border-radius:24px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:#fff;color:var(--text-muted);min-height:42px;user-select:none;transition:all .15s}
+.toggle-btn{padding:10px 16px;border-radius:24px;font-size:14px;font-weight:800;cursor:pointer;border:2px solid var(--border);background:#fff;color:var(--text-muted);min-height:42px;user-select:none;transition:all .15s}
 .toggle-btn:active{transform:scale(.96)}
 .toggle-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .toggle-btn.yes.active{background:var(--success);border-color:var(--success);color:#fff}
@@ -118,13 +119,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .export-card h3{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px}
 .export-card p{font-size:12px;opacity:.8;margin-bottom:14px;line-height:1.5}
 /* MISC */
-.info-box{background:#e8f0fe;border-left:4px solid var(--info);padding:10px 12px;border-radius:0 10px 10px 0;font-size:11px;line-height:1.5;color:#1a3a5e;margin-bottom:12px}
+.info-box{background:#e9f2ff;border-left:4px solid var(--info);padding:10px 12px;border-radius:0 10px 10px 0;font-size:12px;line-height:1.5;color:#113a66;margin-bottom:12px}
 .progress-bar{width:100%;height:3px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:6px}
 .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease}
 .participant-card{background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
 .participant-card .participant-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .participant-card .participant-title{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase}
-@media(max-width:480px){html{font-size:14px}.form-row,.form-row-3{grid-template-columns:1fr;gap:8px}.section{padding:10px 10px 16px}.card{padding:14px}.section-title{font-size:18px}.diagnosis-row{flex-direction:column;align-items:flex-start;gap:6px}.diagnosis-row .toggle-group{align-self:flex-end}}
+@media(max-width:480px){html{font-size:15px}.form-row,.form-row-3{grid-template-columns:1fr;gap:8px}.section{padding:10px 10px 16px}.card{padding:14px}.section-title{font-size:19px}.diagnosis-row{flex-direction:column;align-items:flex-start;gap:6px}.diagnosis-row .toggle-group{align-self:flex-end}}
 @media(min-width:481px) and (max-width:768px){.form-row-3{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -132,7 +133,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- TOP BAR -->
 <div class="top-bar">
-<div class="top-bar-row"><h1>🌿 BosqueCR</h1><span class="step-badge" id="stepBadge">1 / 7</span></div>
+<div class="top-bar-row"><h1>◼ BosqueCR</h1><span class="step-badge" id="stepBadge">1 / 7</span></div>
 <div class="step-title" id="stepTitle">Datos Generales</div>
 <div class="step-dots" id="stepDots"></div>
 </div>
@@ -262,7 +263,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <!-- BOTTOM NAVIGATION -->
-<nav class="bottom-nav"><div class="bottom-nav-item active" onclick="goTo(0)"><span class="nav-icon">📋</span><span class="nav-label">General</span></div><div class="bottom-nav-item" onclick="goTo(1)"><span class="nav-icon">📍</span><span class="nav-label">Ubicación</span></div><div class="bottom-nav-item" onclick="goTo(2)"><span class="nav-icon">⛰️</span><span class="nav-label">Entorno</span></div><div class="bottom-nav-item" onclick="goTo(3)"><span class="nav-icon">📐</span><span class="nav-label">Parcelas</span></div><div class="bottom-nav-item" onclick="goTo(4)"><span class="nav-icon">🌲</span><span class="nav-label">Árboles</span></div><div class="bottom-nav-item" onclick="goTo(5)"><span class="nav-icon">🔍</span><span class="nav-label">Síntesis</span></div><div class="bottom-nav-item" onclick="goTo(6)"><span class="nav-icon">📦</span><span class="nav-label">Exportar</span></div></nav>
+<nav class="bottom-nav"><div class="bottom-nav-item active" onclick="goTo(0)"><span class="nav-icon">■</span><span class="nav-label">General</span></div><div class="bottom-nav-item" onclick="goTo(1)"><span class="nav-icon">●</span><span class="nav-label">Ubicación</span></div><div class="bottom-nav-item" onclick="goTo(2)"><span class="nav-icon">▲</span><span class="nav-label">Entorno</span></div><div class="bottom-nav-item" onclick="goTo(3)"><span class="nav-icon">▦</span><span class="nav-label">Parcelas</span></div><div class="bottom-nav-item" onclick="goTo(4)"><span class="nav-icon">│</span><span class="nav-label">Árboles</span></div><div class="bottom-nav-item" onclick="goTo(5)"><span class="nav-icon">◌</span><span class="nav-label">Síntesis</span></div><div class="bottom-nav-item" onclick="goTo(6)"><span class="nav-icon">⬒</span><span class="nav-label">Exportar</span></div></nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
@@ -328,7 +329,7 @@ function selParcela(i){S.activeParcela=i;renderPTabs();renderParcela(i)}
 function renderParcela(idx){const p=S.parcelas[idx],c=document.getElementById('parcelasContainer'),id='p'+idx;
 let ecoH='';ecoChecks.forEach(g=>{ecoH+='<div style="font-weight:700;font-size:11px;margin:8px 0 4px;color:var(--primary);text-transform:uppercase">'+(g.cat==='nativo'?'🌿 Nativo/Autóctono':'⚠️ Intervención')+'</div>';g.items.forEach(it=>{const k=g.cat+'_'+it.replace(/[^a-zA-Z]/g,'_').substring(0,30);const v=p.eco[k]||'';ecoH+='<div class="checklist-item"><span class="checklist-label">'+it+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm '+(v==='si'?'active':'')+'" onclick="S.parcelas['+idx+'].eco[\''+k+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm '+(v==='no'?'active':'')+'" onclick="S.parcelas['+idx+'].eco[\''+k+'\']=\'no\';togYN(this)">No</div></div></div>'})});
 let regH='';regenChecks.forEach(it=>{const k='r_'+it.replace(/[^a-zA-Z]/g,'_').substring(0,30);const v=p.regen[k]||'';regH+='<div class="checklist-item"><span class="checklist-label">'+it+'</span><div class="toggle-group" style="flex-shrink:0"><div class="toggle-btn yes btn-sm '+(v==='si'?'active':'')+'" onclick="S.parcelas['+idx+'].regen[\''+k+'\']=\'si\';togYN(this)">Sí</div><div class="toggle-btn no btn-sm '+(v==='no'?'active':'')+'" onclick="S.parcelas['+idx+'].regen[\''+k+'\']=\'no\';togYN(this)">No</div></div></div>'});
-c.innerHTML='<div class="card"><div class="card-title"><span class="icon">📐</span> Parcela '+(idx+1)+'</div><button class="btn btn-primary btn-block" onclick="capTime('+idx+',\\'hi\\')" style="font-size:16px;padding:16px;background:'+(p.hi?'var(--success)':'var(--primary)')+'">⏱ '+(p.hi?'INICIADA: '+p.hi:'INICIAR PARCELA')+'</button></div><div class="card"><div class="form-group"><label>Tipo</label><div class="toggle-group"><div class="toggle-btn '+(p.tipo==='circular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'circular\';renderParcela('+idx+')">Circular r=12.6m</div><div class="toggle-btn '+(p.tipo==='rectangular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'rectangular\';renderParcela('+idx+')">Rectangular 20×25</div></div></div><div class="gps-display"><div class="gps-dot '+(p.gps.lat?'active':'')+'"></div><span>'+(p.gps.lat?p.gps.lat+', '+p.gps.lon+' (±'+p.gps.prec+')':'Sin coordenadas')+'</span></div><button class="btn btn-primary btn-block" onclick="capParcelaGPS('+idx+')">📡 Capturar GPS parcela</button></div><div class="card"><div class="card-title"><span class="icon">🌳</span> Ecosistema (Cuadro 3)</div>'+ecoH+'</div><div class="card"><div class="card-title"><span class="icon">🌱</span> Regeneración (Cuadro 4)</div>'+regH+'</div><div class="card"><div class="card-title"><span class="icon">🌲</span> Árboles DAP ≥ 15 cm (Cuadro 5)</div><div class="info-box">Mida DAP de todo árbol vivo ≥ 15 cm. Registre especie y dosel (1-5).</div><button class="btn btn-accent btn-block" onclick="addArbol('+idx+')">＋ Agregar árbol</button><div class="table-scroll"><table class="tree-table" id="'+id+'_at"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">🌿</span> Renovales DAP 2–14.9 cm (Cuadro 6)</div><div class="info-box">2 subparcelas 50 m² (r=3.99m) en cuadrantes NO y SE.</div><button class="btn btn-accent btn-block" onclick="addRenoval('+idx+')">＋ Agregar renoval</button><div class="table-scroll"><table class="tree-table" id="'+id+'_rt"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">📸</span> Cobertura copas (GLAMA)</div><div class="info-box">5 fotos niveladas a 1.3m: centro + NO, NE, SO, SE.</div><div class="form-row"><div class="form-group"><label>% Centro</label><input type="number" step="0.1" value="'+(p.dosel.centro||'')+'" onchange="updDosel('+idx+',\'centro\',this.value)"></div><div class="form-group"><label>% NO</label><input type="number" step="0.1" value="'+(p.dosel.no||'')+'" onchange="updDosel('+idx+',\'no\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% NE</label><input type="number" step="0.1" value="'+(p.dosel.ne||'')+'" onchange="updDosel('+idx+',\'ne\',this.value)"></div><div class="form-group"><label>% SO</label><input type="number" step="0.1" value="'+(p.dosel.so||'')+'" onchange="updDosel('+idx+',\'so\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% SE</label><input type="number" step="0.1" value="'+(p.dosel.se||'')+'" onchange="updDosel('+idx+',\'se\',this.value)"></div><div class="form-group"><label>MEDIA</label><input type="text" id="'+id+'_dm" readonly style="font-weight:700;background:var(--accent-light);color:var(--primary)"></div></div><input type="file" id="'+id+'_fdi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'dosel\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fdi\').click()">📸 Fotos de dosel</button><div class="photo-grid" id="photos_dosel_'+idx+'"></div></div><div class="card"><div class="card-title"><span class="icon">📷</span> Fotos generales</div><input type="file" id="'+id+'_fgi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'parcela\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fgi\').click()">📸 Agregar fotos</button><div class="photo-grid" id="photos_parcela_'+idx+'"></div></div><div class="card"><div class="form-group"><label>Observaciones</label><textarea onchange="S.parcelas['+idx+'].obs=this.value">'+p.obs+'</textarea></div><button class="btn btn-block" onclick="capTime('+idx+',\\'hf\\')" style="margin-top:10px;font-size:16px;padding:16px;background:'+(p.hf?'var(--success)':'var(--accent)')+';color:var(--primary);font-weight:700">⏱ '+(p.hf?'FINALIZADA: '+p.hf:'FINALIZAR PARCELA')+'</button><button class="btn btn-danger btn-block" onclick="remParcela('+idx+')" style="margin-top:10px">🗑 Eliminar P'+(idx+1)+'</button></div>';
+c.innerHTML='<div class="card"><div class="card-title"><span class="icon">📐</span> Parcela '+(idx+1)+'</div><button class="btn btn-primary btn-block" onclick="capTime('+idx+',\'hi\')" style="font-size:16px;padding:16px;background:'+(p.hi?'var(--success)':'var(--primary)')+'">⏱ '+(p.hi?'INICIADA: '+p.hi:'INICIAR PARCELA')+'</button></div><div class="card"><div class="form-group"><label>Tipo</label><div class="toggle-group"><div class="toggle-btn '+(p.tipo==='circular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'circular\';renderParcela('+idx+')">Circular r=12.6m</div><div class="toggle-btn '+(p.tipo==='rectangular'?'active':'')+'" onclick="S.parcelas['+idx+'].tipo=\'rectangular\';renderParcela('+idx+')">Rectangular 20×25</div></div></div><div class="gps-display"><div class="gps-dot '+(p.gps.lat?'active':'')+'"></div><span>'+(p.gps.lat?p.gps.lat+', '+p.gps.lon+' (±'+p.gps.prec+')':'Sin coordenadas')+'</span></div><button class="btn btn-primary btn-block" onclick="capParcelaGPS('+idx+')">📡 Capturar GPS parcela</button></div><div class="card"><div class="card-title"><span class="icon">🌳</span> Ecosistema (Cuadro 3)</div>'+ecoH+'</div><div class="card"><div class="card-title"><span class="icon">🌱</span> Regeneración (Cuadro 4)</div>'+regH+'</div><div class="card"><div class="card-title"><span class="icon">🌲</span> Árboles DAP ≥ 15 cm (Cuadro 5)</div><div class="info-box">Mida DAP de todo árbol vivo ≥ 15 cm. Registre especie y dosel (1-5).</div><button class="btn btn-accent btn-block" onclick="addArbol('+idx+')">＋ Agregar árbol</button><div class="table-scroll"><table class="tree-table" id="'+id+'_at"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">🌿</span> Renovales DAP 2–14.9 cm (Cuadro 6)</div><div class="info-box">2 subparcelas 50 m² (r=3.99m) en cuadrantes NO y SE.</div><button class="btn btn-accent btn-block" onclick="addRenoval('+idx+')">＋ Agregar renoval</button><div class="table-scroll"><table class="tree-table" id="'+id+'_rt"><thead><tr><th>Nº</th><th>DAP</th><th>Dosel</th><th>Especie</th><th></th></tr></thead><tbody></tbody></table></div></div><div class="card"><div class="card-title"><span class="icon">📸</span> Cobertura copas (GLAMA)</div><div class="info-box">5 fotos niveladas a 1.3m: centro + NO, NE, SO, SE.</div><div class="form-row"><div class="form-group"><label>% Centro</label><input type="number" step="0.1" value="'+(p.dosel.centro||'')+'" onchange="updDosel('+idx+',\'centro\',this.value)"></div><div class="form-group"><label>% NO</label><input type="number" step="0.1" value="'+(p.dosel.no||'')+'" onchange="updDosel('+idx+',\'no\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% NE</label><input type="number" step="0.1" value="'+(p.dosel.ne||'')+'" onchange="updDosel('+idx+',\'ne\',this.value)"></div><div class="form-group"><label>% SO</label><input type="number" step="0.1" value="'+(p.dosel.so||'')+'" onchange="updDosel('+idx+',\'so\',this.value)"></div></div><div class="form-row"><div class="form-group"><label>% SE</label><input type="number" step="0.1" value="'+(p.dosel.se||'')+'" onchange="updDosel('+idx+',\'se\',this.value)"></div><div class="form-group"><label>MEDIA</label><input type="text" id="'+id+'_dm" readonly style="font-weight:700;background:var(--accent-light);color:var(--primary)"></div></div><input type="file" id="'+id+'_fdi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'dosel\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fdi\').click()">📸 Fotos de dosel</button><div class="photo-grid" id="photos_dosel_'+idx+'"></div></div><div class="card"><div class="card-title"><span class="icon">📷</span> Fotos generales</div><input type="file" id="'+id+'_fgi" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(event,\'parcela\','+idx+')"><button class="btn btn-outline btn-block" onclick="document.getElementById(\''+id+'_fgi\').click()">📸 Agregar fotos</button><div class="photo-grid" id="photos_parcela_'+idx+'"></div></div><div class="card"><div class="form-group"><label>Observaciones</label><textarea onchange="S.parcelas['+idx+'].obs=this.value">'+p.obs+'</textarea></div><button class="btn btn-block" onclick="capTime('+idx+',\'hf\')" style="margin-top:10px;font-size:16px;padding:16px;background:'+(p.hf?'var(--success)':'var(--accent)')+';color:var(--primary);font-weight:700">⏱ '+(p.hf?'FINALIZADA: '+p.hf:'FINALIZAR PARCELA')+'</button><button class="btn btn-danger btn-block" onclick="remParcela('+idx+')" style="margin-top:10px">🗑 Eliminar P'+(idx+1)+'</button></div>';
 renderArbTable(idx);renderRenTable(idx);renderPhotos('dosel_'+idx,'photos_dosel_'+idx);renderPhotos('parcela_'+idx,'photos_parcela_'+idx);showDoselMedia(idx)}
 function capTime(pi,field){const now=new Date();S.parcelas[pi][field]=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');renderParcela(pi)}
 function capParcelaGPS(i){if(!navigator.geolocation)return alert('GPS no disponible');navigator.geolocation.getCurrentPosition(p=>{S.parcelas[i].gps={lat:p.coords.latitude.toFixed(6),lon:p.coords.longitude.toFixed(6),prec:p.coords.accuracy?p.coords.accuracy.toFixed(0)+'m':'',elev:p.coords.altitude?p.coords.altitude.toFixed(0):''};renderParcela(i)},e=>alert('Error: '+e.message),{enableHighAccuracy:true,timeout:15000})}
