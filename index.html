@@ -322,6 +322,7 @@ general:{},ubicacion:{},
 entorno:{topo:null,asentamiento:null,coberturas:{}},
 parcelas:[],arbolesGrandes:[],personalAdicional:[],representantes:[],
 sintesis:{diagnostico:{},decision:'',observaciones:''},
+designAllPoints:[],
 activeParcela:0
 };
 const photoStore={entorno:[]};
@@ -333,7 +334,7 @@ const regenChecks=['Árboles de diferentes diámetros (estructura disetánea)','
 
 // ===== SECTION LOCKS =====
 const sectionLocks=new Array(7).fill(false);
-let pendingDesign=null;
+let pendingDesign=null,pendingDesignAll=null;
 
 // ===== STEP DOTS =====
 (function(){const d=document.getElementById('stepDots');SECTIONS.forEach((_,i)=>{const dot=document.createElement('div');dot.className='step-dot'+(i===0?' active':'');dot.onclick=()=>goTo(i);d.appendChild(dot)})})();
@@ -465,7 +466,10 @@ async function importDesign(ev){
     const v=(r[colSel]||'').toString().trim().toLowerCase();
     return v==='x'||v==='si'||v==='sí'||v==='1'||v==='true'||v==='seleccionado';
   });
+  const isRowSelected=r=>{if(!colSel)return true;const v=(r[colSel]||'').toString().trim().toLowerCase();return v==='x'||v==='si'||v==='sí'||v==='1'||v==='true'||v==='seleccionado';};
   pendingDesign=selected.map(r=>({id:r[colId].toString().trim(),x:r[colX].toString().trim(),y:r[colY].toString().trim()}));
+  // Guardar TODOS los puntos del diseño (seleccionados y no seleccionados) para el mapa
+  pendingDesignAll=rows.map(r=>({id:r[colId].toString().trim(),x:r[colX].toString().trim(),y:r[colY].toString().trim(),selected:isRowSelected(r)}));
   const prev=document.getElementById('designPreview');
   if(!selected.length){prev.innerHTML='<div class="info-box" style="background:#ffeaea;border-color:var(--danger);color:#7a0a0a">Sin puntos seleccionados. Verifique la columna de selección.</div>';return;}
   prev.innerHTML='<div class="info-box" style="background:#d1f0e0;border-color:var(--success);color:#0a3d20"><strong>'+rows.length+' puntos totales · '+selected.length+' seleccionados</strong><br>IDs: '+pendingDesign.map(p=>p.id).join(', ')+'</div><button class="btn btn-accent btn-block" onclick="applyDesign()" style="margin-top:8px">✓ Crear '+selected.length+' parcela(s) del diseño</button>';
@@ -477,7 +481,9 @@ function applyDesign(){
   pendingDesign.forEach((pt,i)=>{
     S.parcelas.push({id:i+1,customId:pt.id,gps:{lat:'',lon:'',prec:'',elev:''},hi:'',hf:'',tipo:'circular',eco:{},regen:{},arboles:[],renovales:[],dosel:{centro:0,no:0,ne:0,so:0,se:0},obs:'',locked:false,savedLocal:false,coord_x_design:pt.x,coord_y_design:pt.y});
   });
-  S.activeParcela=0;pendingDesign=null;
+  S.activeParcela=0;
+  S.designAllPoints=pendingDesignAll||[];
+  pendingDesign=null;pendingDesignAll=null;
   renderPTabs();selParcela(0);
   document.getElementById('designPreview').innerHTML='<div class="info-box" style="background:#d1f0e0;border-color:var(--success);color:#0a3d20">✓ '+S.parcelas.length+' parcela(s) creada(s) desde el diseño.</div>';
 }
@@ -530,7 +536,7 @@ const gf=['objetivo','expediente','fecha_inspeccion','permisiario','cedula','rep
 gf.forEach(f=>{const el=document.getElementById(f);if(el&&d.general&&d.general[f])el.value=d.general[f]});
 const uf=['provincia','canton','distrito','caserio','gps_lat','gps_lon','gps_precision','gps_elev','coord_x','coord_y','traslado_sal1','traslado_lleg1','transporte1','traslado_sal2','traslado_lleg2','transporte2','traslado_sal3','traslado_lleg3','transporte3'];
 uf.forEach(f=>{const el=document.getElementById(f);if(el&&d.ubicacion&&d.ubicacion[f])el.value=d.ubicacion[f]});
-S.entorno=d.entorno||S.entorno;S.parcelas=d.parcelas||[];S.arbolesGrandes=d.arbolesGrandes||[];S.personalAdicional=d.personalAdicional||[];S.representantes=d.representantes||[];S.sintesis=d.sintesis||S.sintesis;
+S.entorno=d.entorno||S.entorno;S.parcelas=d.parcelas||[];S.arbolesGrandes=d.arbolesGrandes||[];S.personalAdicional=d.personalAdicional||[];S.representantes=d.representantes||[];S.sintesis=d.sintesis||S.sintesis;S.designAllPoints=d.designAllPoints||[];
 if(S.entorno.obs_entorno){const oe=document.getElementById('obs_entorno');if(oe)oe.value=S.entorno.obs_entorno}
 if(d._ps)Object.assign(photoStore,d._ps);
 renderPersonal();renderRepresentantes();renderPTabs();if(S.parcelas.length>0)selParcela(0);renderAG();
@@ -575,42 +581,61 @@ function renderMapPoints(){
   if(!leafletMap)return;
   mapMarkers.forEach(m=>leafletMap.removeLayer(m));
   mapMarkers=[];
-  // Limpiar mensaje vacío previo
   const prev=document.getElementById('map-empty-msg');if(prev)prev.remove();
   const bounds=L.latLngBounds();
   let hasPoints=false;
 
+  // 1) Puntos NO seleccionados del diseño (fondo, menos prominentes)
+  const selectedIds=new Set(S.parcelas.map(p=>p.customId).filter(Boolean));
+  S.designAllPoints.forEach(pt=>{
+    if(pt.selected)return; // los seleccionados se dibujan más abajo
+    const w=crtm05toLatLon(pt.x,pt.y);if(!w)return;
+    const icon=L.divIcon({className:'',html:'<div style="background:rgba(100,120,140,.35);width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(100,120,140,.7);box-shadow:none"></div>',iconSize:[10,10],iconAnchor:[5,5]});
+    const m=L.marker([w.lat,w.lon],{icon:icon,zIndexOffset:-100}).addTo(leafletMap);
+    m.bindTooltip(pt.id,{permanent:true,direction:'top',className:'map-pid-label',offset:[0,-9],opacity:0.65});
+    mapMarkers.push(m);
+    bounds.extend([w.lat,w.lon]);
+    hasPoints=true;
+  });
+
+  // 2) Parcelas seleccionadas — coordenada del DISEÑO es el punto objetivo
   S.parcelas.forEach((p,i)=>{
-    let lat=null,lon=null,fromGPS=false;
-    if(p.gps&&p.gps.lat&&p.gps.lon&&p.gps.lat!==''){
-      lat=parseFloat(p.gps.lat);lon=parseFloat(p.gps.lon);fromGPS=true;
-    } else if(p.coord_x_design&&p.coord_y_design&&p.coord_x_design!==''){
-      const w=crtm05toLatLon(p.coord_x_design,p.coord_y_design);
-      if(w){lat=w.lat;lon=w.lon;}
-    }
-    if(!lat||!lon||isNaN(lat)||isNaN(lon))return;
+    const xD=p.coord_x_design,yD=p.coord_y_design;
+    if(!xD||!yD||xD==='')return;
+    const w=crtm05toLatLon(xD,yD);if(!w)return;
+    const lat=w.lat,lon=w.lon;
     const pid=p.customId||('P'+(i+1));
-    // Parcelas con GPS capturado: verde oscuro, más grande; solo diseño: dorado, más pequeño
-    const color=fromGPS?'#0f7a45':'#f0b429';
-    const border=fromGPS?'#14321f':'#102a43';
-    const sz=fromGPS?22:16;
-    const inner=fromGPS?'<div style="width:8px;height:8px;background:#fff;border-radius:50%;opacity:.8"></div>':'';
-    const icon=L.divIcon({className:'',html:'<div style="background:'+color+';width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:3px solid '+border+';box-shadow:0 2px 8px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;">'+inner+'</div>',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+    // Marker objetivo (diseño): verde primario, prominente
+    const sz=22;
+    const icon=L.divIcon({className:'',html:'<div style="background:#14321f;width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:3px solid #f0b429;box-shadow:0 2px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;"><div style="width:8px;height:8px;background:#f0b429;border-radius:50%"></div></div>',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
     const marker=L.marker([lat,lon],{icon:icon}).addTo(leafletMap);
     marker.bindTooltip(pid,{permanent:true,direction:'top',className:'map-pid-label',offset:[0,-(sz/2+4)]});
-    const xD=p.coord_x_design||'—';
-    const yD=p.coord_y_design||'—';
-    const gpsInfo=fromGPS?'<div style="font-size:11px;color:#0f7a45;margin:4px 0 10px;font-weight:600">✅ GPS capturado: '+p.gps.lat+', '+p.gps.lon+'</div>':'<div style="font-size:11px;color:#627d98;margin:4px 0 10px">⚠️ GPS no capturado — coordenadas de diseño</div>';
-    const popHtml='<div style="font-family:DM Sans,sans-serif;min-width:210px">'
-      +'<div style="font-weight:800;font-size:15px;margin-bottom:4px;color:#102a43">📍 Parcela '+pid+'</div>'
-      +gpsInfo
-      +'<div style="font-size:12px;color:#334e68;margin-bottom:2px">X CRTM05: <strong>'+xD+'</strong></div>'
-      +'<div style="font-size:12px;color:#334e68;margin-bottom:12px">Y CRTM05: <strong>'+yD+'</strong></div>'
+
+    // 2b) Si hay GPS de auditoría capturado, mostrarlo como punto secundario azul
+    let auditInfo='<div style="font-size:11px;color:#9fb3c8;margin:4px 0 10px">Sin GPS de auditoría capturado aún</div>';
+    if(p.gps&&p.gps.lat&&p.gps.lat!==''){
+      const aLat=parseFloat(p.gps.lat),aLon=parseFloat(p.gps.lon);
+      // Punto azul de auditoría
+      const aIcon=L.divIcon({className:'',html:'<div style="background:#3b82f6;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4)"></div>',iconSize:[12,12],iconAnchor:[6,6]});
+      const aMarker=L.marker([aLat,aLon],{icon:aIcon,zIndexOffset:10}).addTo(leafletMap);
+      aMarker.bindTooltip(pid+' GPS',{direction:'top',className:'map-pid-label',opacity:0.85});
+      // Línea de desplazamiento diseño→GPS
+      const line=L.polyline([[lat,lon],[aLat,aLon]],{color:'#3b82f6',weight:1.5,dashArray:'4 4',opacity:0.7}).addTo(leafletMap);
+      mapMarkers.push(aMarker,line);
+      const dDist=L.latLng(lat,lon).distanceTo(L.latLng(aLat,aLon));
+      auditInfo='<div style="font-size:11px;color:#3b82f6;margin:4px 0 10px;font-weight:600">🔵 GPS auditoría: '+p.gps.lat+', '+p.gps.lon+(dDist>0?' (despl. '+Math.round(dDist)+'m)':'')+'</div>';
+    }
+
+    const popHtml='<div style="font-family:DM Sans,sans-serif;min-width:220px">'
+      +'<div style="font-weight:800;font-size:15px;margin-bottom:4px;color:#102a43">🎯 Parcela '+pid+'</div>'
+      +'<div style="font-size:12px;color:#334e68;margin-bottom:1px">X diseño: <strong>'+xD+'</strong></div>'
+      +'<div style="font-size:12px;color:#334e68;margin-bottom:8px">Y diseño: <strong>'+yD+'</strong></div>'
+      +auditInfo
       +'<div style="display:flex;gap:8px">'
       +'<button onclick="startMapNavigation('+lat+','+lon+',\''+pid+'\',\''+xD+'\',\''+yD+'\')" style="flex:1;padding:11px 6px;background:#102a43;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">🧭 Navegar</button>'
       +'<button onclick="openParcelaForm('+i+')" style="flex:1;padding:11px 6px;background:#f0b429;color:#102a43;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">📝 Formulario</button>'
       +'</div></div>';
-    marker.bindPopup(popHtml,{maxWidth:270});
+    marker.bindPopup(popHtml,{maxWidth:280});
     mapMarkers.push(marker);
     bounds.extend([lat,lon]);
     hasPoints=true;
